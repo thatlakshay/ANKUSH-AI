@@ -221,6 +221,11 @@
   .citation-sup {
     color: var(--accent); font-weight: bold; font-family: var(--mono);
     font-size: 0.65rem; vertical-align: super; line-height: 0; margin-left: 2px;
+    text-decoration: none; cursor: pointer;
+  }
+  .citation-sup:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
   }
 
   /* ── Markdown Headers & Formatting inside Assistant Text ── */
@@ -1048,45 +1053,34 @@ const DEFAULT_CHARACTERS = [
     id: 'ankush',
     name: 'ANKUSH',
     subtitle: 'Advanced Research Intelligence Agent',
-    systemPrompt: `You are Ankush, a highly professional AI researcher. You work FOR the user, addressing them as "Sir" or by deferring to them as your boss/director. You are precise, factual, structured, and always cite sources.
+    systemPrompt: `You are Ankush, a world-class advanced research intelligence agent. You work FOR the user, addressing them as "Sir" or by deferring to them as your boss/director.
 
-ROLE & BEHAVIOR:
-• You are a dedicated researcher reporting to your boss (the user)
+ROLE & MISSION:
+• Your core mission is to perform comprehensive, high-fidelity online research and compile authoritative, deep-dive briefing reports.
 • Address the user respectfully: "Sir", "Understood, Sir", "As you requested, Sir"
-• Always be factual, neutral, and academically rigorous
-• Structure responses with clear sections when needed
-• Be thorough but concise — deliver intelligence briefing style
-• Acknowledge uncertainty: "Based on available data..." or "This requires verification..."
-• Never fabricate facts; if unsure, say so clearly
+• Provide extensive analytical depth, maximum reading content, and comprehensive details. Do not summarize briefly or omit technical/historical context. Exhaustively report all relevant data points, numbers, timelines, and perspectives.
+• Always remain neutral, objective, factual, and academically rigorous.
+• Never fabricate details; if information is missing or conflicts, clearly explain the gap or contradiction.
 
-WHEN PROVIDED [NEWS_DATA] or [SEARCH_DATA]:
-- Extract the key facts and present them in a clear briefing
-- Reference each piece of information with the source number: [1], [2], etc.
-- Summarize accurately without distorting the source content
-- Present multiple angles if available
+WHEN CONTEXT DATA IS PROVIDED ([LIVE_DATA]):
+• Read the provided research context carefully and base your response strictly on it.
+• Ground all facts in the retrieved sources. Use inline citations in the format [1], [2], etc., corresponding to the source number.
+• Analyze and compile the data into a structured report. Do not write short or superficial summaries; provide deep analysis of the key themes, announcements, or facts.
 
 WHEN NO LIVE DATA IS AVAILABLE:
-- Use your training knowledge and clearly state: "Based on my training data as of early 2024..."
-- Recommend where the user can verify the information
-- Suggest credible sources: Reuters, BBC, AP News, Wikipedia, academic journals
+• Use your training knowledge and clearly state: "Based on my training data as of early 2024..."
+• Recommend where the user can verify the information
+• Suggest credible sources: Reuters, BBC, AP News, Wikipedia, academic journals
 
-FORMAT — STRICTLY FOLLOW THIS:
-- Always structure your response in clearly separated sections
-- Use a short 1-2 sentence SUMMARY at the top
-- Then use "• " bullet points for key facts and details (one fact per bullet)
-- Use "KEY POINTS:" as a header before bullet lists
-- Use "CONCLUSION:" for a closing line when relevant
-- Add blank lines between sections for breathing room
-- Number inline references as [1], [2], [3]
-- NEVER write long dense paragraphs — always break into bullets
-- Keep each bullet short: one clear idea, one line
-- Professional intelligence-briefing tone throughout
-
-ACCURACY RULES:
-- Never present speculation as fact
-- Distinguish between confirmed reports and unverified claims
-- If sources conflict, present both sides
-- Always include source citations at end of response in format: SOURCE [N]: [Name of Source] — "Headline/Title of Article" — <url>`
+FORMAT & STRUCTURE:
+• Structure your report using clear, clean markdown sections.
+• Start with a detailed, high-level overview section.
+• Use subheadings (###) for specific research categories, findings, or thematic areas.
+• When listing points, do not write simple one-sentence bullet points. Write detailed, descriptive bullets (2-4 sentences each) that provide full context and cite sources.
+• End with an analytical conclusion or next steps for verification.
+• Always include a complete "Sources" bibliography section at the very end in the following exact format:
+  SOURCE [N]: [Name of Source] — "Headline/Title of Article" — <url>
+  (Double-check that the URL matches the source url exactly. Do not hallucinate URLs.)`
   }
 ];
 
@@ -1929,26 +1923,73 @@ function needsLive(txt) {
 /* ── DuckDuckGo Instant Answer with Nested Topics ── */
 async function duckSearch(query) {
   try {
-    const res  = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
-    const data = await res.json();
-    const results = [];
-    if (data.AbstractText && data.AbstractURL) {
-      results.push({ text: data.AbstractText, url: data.AbstractURL, title: data.AbstractSource || 'DuckDuckGo' });
-    }
-    const extractTopics = (topics) => {
-      topics.forEach(t => {
-        if (t.Text && t.FirstURL) {
-          results.push({ text: t.Text, url: t.FirstURL, title: t.Text.slice(0, 50) });
-        } else if (t.Topics) {
-          extractTopics(t.Topics);
-        }
+    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    
+    // Try corsproxy.io first
+    let html = '';
+    try {
+      const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(searchUrl), {
+        signal: AbortSignal.timeout(5000)
       });
-    };
-    if (data.RelatedTopics) {
-      extractTopics(data.RelatedTopics);
+      if (res.ok) html = await res.text();
+    } catch (e) {}
+
+    // Fallback to allorigins
+    if (!html) {
+      try {
+        const res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(searchUrl), {
+          signal: AbortSignal.timeout(5000)
+        });
+        if (res.ok) {
+          const json = await res.json();
+          html = json.contents || '';
+        }
+      } catch (e) {}
     }
+
+    if (!html) return [];
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const results = [];
+    
+    doc.querySelectorAll('.result').forEach(resultEl => {
+      const aEl = resultEl.querySelector('.result__a');
+      const snippetEl = resultEl.querySelector('.result__snippet');
+      if (aEl) {
+        const title = aEl.textContent.trim();
+        let rawLink = aEl.getAttribute('href');
+        
+        // Extract redirect URL from uddg if present
+        if (rawLink) {
+          if (rawLink.startsWith('//')) {
+            rawLink = 'https:' + rawLink;
+          }
+          try {
+            const urlObj = new URL(rawLink);
+            const uddg = urlObj.searchParams.get('uddg');
+            if (uddg) {
+              rawLink = uddg;
+            }
+          } catch (err) {}
+        }
+        
+        const snippet = snippetEl ? snippetEl.textContent.trim() : '';
+        if (title && rawLink && rawLink.startsWith('http')) {
+          results.push({
+            title: title,
+            url: rawLink,
+            text: snippet
+          });
+        }
+      }
+    });
+
     return results.slice(0, 8);
-  } catch { return []; }
+  } catch (err) {
+    console.error('duckSearch error:', err);
+    return [];
+  }
 }
 
 /* ── Upgraded Parallel RSS Search (Google News Index + Top Outlets) ── */
@@ -2035,7 +2076,7 @@ async function wikiSearch(query) {
     const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${cleanQ}`);
     if (!res.ok) return null;
     const data = await res.json();
-    if (data.extract) return { text: data.extract.slice(0,400), url: data.content_urls?.desktop?.page || 'https://wikipedia.org', title: data.title };
+    if (data.extract) return { text: data.extract.slice(0, 2000), url: data.content_urls?.desktop?.page || 'https://wikipedia.org', title: data.title };
     return null;
   } catch { return null; }
 }
@@ -2139,6 +2180,61 @@ async function gatherIntel(query) {
   const rssItems = await pRss;
   const wiki = await pWiki;
   
+  // Deduplicate and select top web results to scrape
+  const seenUrls = new Set();
+  const uniqueItems = [];
+
+  if (wiki) {
+    seenUrls.add(wiki.url);
+  }
+
+  ddgItems.forEach(item => {
+    const cleanUrl = item.url.replace(/&amp;/g, '&');
+    if (!seenUrls.has(cleanUrl)) {
+      seenUrls.add(cleanUrl);
+      uniqueItems.push({
+        title: item.title,
+        url: cleanUrl,
+        source: item.source || getUrlMetadataFallback(cleanUrl).domain || 'Web Search',
+        desc: item.text
+      });
+    }
+  });
+
+  rssItems.forEach(item => {
+    const cleanUrl = item.url.replace(/&amp;/g, '&');
+    if (!seenUrls.has(cleanUrl)) {
+      seenUrls.add(cleanUrl);
+      uniqueItems.push({
+        title: item.title,
+        url: cleanUrl,
+        source: item.source,
+        desc: item.desc
+      });
+    }
+  });
+
+  const scrapeTargets = uniqueItems.slice(0, 3);
+  const scrapePromises = scrapeTargets.map(async (target, idx) => {
+    const stepId = `scrape-${idx}`;
+    const cleanUrl = target.url;
+    const shortTitle = target.title.slice(0, 30) + (target.title.length > 30 ? '…' : '');
+    const domain = target.source || 'Web';
+    
+    addResearchStep(stepId, `Reading "${shortTitle}" (${domain})...`, 'running');
+    
+    const fullText = await fetchPageText(cleanUrl);
+    if (fullText && fullText.length > 200) {
+      updateResearchStep(stepId, `Read: "${shortTitle}" (${domain})`, 'done');
+      return { ...target, fullText: fullText };
+    } else {
+      updateResearchStep(stepId, `Failed to read: "${shortTitle}"`, 'done');
+      return { ...target, fullText: null };
+    }
+  });
+
+  const scrapedResults = await Promise.all(scrapePromises);
+  
   await new Promise(r => setTimeout(r, 600));
   removeResearchCard();
 
@@ -2146,29 +2242,21 @@ async function gatherIntel(query) {
   let contextBlock = '';
 
   if (deepSearchActive) {
-    if (rssItems.length) {
-      contextBlock += 'LIVE NEWS ARTICLES:\n';
-      rssItems.forEach((item) => {
-        allSources.push({ title: item.title, url: item.url, source: item.source });
-        contextBlock += `[${allSources.length}] ${item.source} — ${item.title}: ${item.desc}\n`;
-      });
-      contextBlock += '\n';
-    }
-
+    let sourceIndex = 1;
+    
     if (wiki) {
       allSources.push({ title: wiki.title, url: wiki.url, source: 'Wikipedia' });
-      contextBlock += `ENCYCLOPEDIA CONTEXT:\n[${allSources.length}] Wikipedia — ${wiki.title}: ${wiki.text}\n\n`;
+      contextBlock += `ENCYCLOPEDIA CONTEXT:\n[${sourceIndex}] Wikipedia — ${wiki.title}:\n${wiki.text}\n\n`;
+      sourceIndex++;
     }
-
-    if (ddgItems.length) {
-      contextBlock += 'ADDITIONAL CONTEXT:\n';
-      ddgItems.slice(0,3).forEach(item => {
-        if (item.text && item.url) {
-          const fallback = getUrlMetadataFallback(item.url);
-          const domainSource = fallback.domain || 'Web Search';
-          allSources.push({ title: item.title, url: item.url, source: domainSource });
-          contextBlock += `[${allSources.length}] ${domainSource} — ${item.title}: ${item.text.slice(0,180)}\n`;
-        }
+    
+    if (scrapedResults.length > 0) {
+      contextBlock += 'LATEST RESEARCH & WEB ARTICLES:\n';
+      scrapedResults.forEach(res => {
+        allSources.push({ title: res.title, url: res.url, source: res.source });
+        const content = res.fullText || res.desc || 'No content available';
+        contextBlock += `[${sourceIndex}] ${res.source} — ${res.title}:\n${content}\n\n`;
+        sourceIndex++;
       });
     }
   }
@@ -2214,6 +2302,105 @@ function getUrlMetadataFallback(urlStr) {
   return { domain, title };
 }
 
+function addResearchStep(stepId, text, status) {
+  const card = document.getElementById('live-research-card');
+  if (!card) return;
+  const container = card.querySelector('.progress-steps');
+  if (!container) return;
+  
+  let step = document.getElementById('step-' + stepId);
+  if (!step) {
+    step = document.createElement('div');
+    step.id = 'step-' + stepId;
+    step.className = 'progress-step ' + status;
+    step.innerHTML = `<span class="step-icon">⬡</span> <span class="step-text">${text}</span>`;
+    container.appendChild(step);
+    
+    // Scroll chat to show new steps
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  } else {
+    updateResearchStep(stepId, text, status);
+  }
+}
+
+async function fetchPageText(url) {
+  // 1. Try corsproxy.io
+  try {
+    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url), {
+      signal: AbortSignal.timeout(2000)
+    });
+    if (res.ok) {
+      const text = parseHtmlText(await res.text());
+      if (text && text.length > 200) return text;
+    }
+  } catch (e) {}
+
+  // 2. Try codetabs proxy
+  try {
+    const res = await fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url), {
+      signal: AbortSignal.timeout(2000)
+    });
+    if (res.ok) {
+      const text = parseHtmlText(await res.text());
+      if (text && text.length > 200) return text;
+    }
+  } catch (e) {}
+
+  // 3. Try allorigins fallback
+  try {
+    const res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url), {
+      signal: AbortSignal.timeout(2000)
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.contents) {
+        const text = parseHtmlText(json.contents);
+        if (text && text.length > 200) return text;
+      }
+    }
+  } catch (e) {}
+  
+  return null;
+}
+
+function parseHtmlText(html) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    doc.querySelectorAll('script, style, head, nav, footer, iframe, noscript, header, svg, aside, hr, button, input, form, style, link').forEach(el => el.remove());
+    
+    const paragraphs = doc.querySelectorAll('p');
+    let pTexts = [];
+    if (paragraphs.length > 0) {
+      paragraphs.forEach(p => {
+        const t = p.textContent.trim().replace(/\s+/g, ' ');
+        if (t.length > 40) {
+          pTexts.push(t);
+        }
+      });
+    }
+    
+    let text = pTexts.join('\n\n');
+    if (text.length < 200) {
+      let divTexts = [];
+      doc.querySelectorAll('div').forEach(div => {
+        if (div.children.length === 0) {
+          const t = div.textContent.trim().replace(/\s+/g, ' ');
+          if (t.length > 50 && t.length < 1000) {
+            divTexts.push(t);
+          }
+        }
+      });
+      text = divTexts.slice(0, 15).join('\n\n');
+    }
+    
+    return text.slice(0, 2500);
+  } catch (e) {
+    return null;
+  }
+}
+
 function formatArticleBody(text, sources) {
   let escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   
@@ -2257,7 +2444,7 @@ function formatArticleBody(text, sources) {
       
       // Remove trailing periods, commas, or parentheses
       citationUrl = citationUrl.replace(/[\.,\)]+$/, '');
-      const cleanUrl = citationUrl.replace(/&amp;/g, '&');
+      let cleanUrl = citationUrl.replace(/&amp;/g, '&');
       
       let sourceName = '';
       let headline = '';
@@ -2269,6 +2456,7 @@ function formatArticleBody(text, sources) {
       if (matchedSource) {
         sourceName = matchedSource.source || '';
         headline = matchedSource.title || '';
+        cleanUrl = matchedSource.url || cleanUrl;
       }
       
       // Fallback: Try to split parts (source name, headline, URL) if provided by LLM
@@ -2328,7 +2516,14 @@ function formatArticleBody(text, sources) {
     }
 
     // Inline citations [1]
-    line = line.replace(/\[(\d+)\]/g, '<sup class="citation-sup">[$1]</sup>');
+    line = line.replace(/\[(\d+)\]/g, (match, numStr) => {
+      const idx = parseInt(numStr, 10);
+      const src = (sources && idx > 0 && idx <= sources.length) ? sources[idx - 1] : null;
+      if (src && src.url) {
+        return `<a href="${src.url}" target="_blank" rel="noopener noreferrer" class="citation-sup" title="${src.title || src.source || 'Source'}">[${numStr}]</a>`;
+      }
+      return `<sup class="citation-sup">[${numStr}]</sup>`;
+    });
     return line;
   });
 
@@ -2559,7 +2754,7 @@ async function sendMsg() {
   }
 
   const apiTemp = deepThinkActive ? 0.7 : 0.35;
-  const apiMaxTokens = deepThinkActive ? 1500 : 600;
+  const apiMaxTokens = (deepSearchActive || deepThinkActive) ? 3000 : 1000;
 
   try {
     const headers = { 'Content-Type': 'application/json' };
