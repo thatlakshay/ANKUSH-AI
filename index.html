@@ -10,6 +10,8 @@
 <title>Ankush — Intelligence Console</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 200 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='glow-heavy' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='5' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80' fill='none' stroke='%2300e5ff' stroke-width='5' stroke-linecap='round' filter='url(%23glow-heavy)'/%3E%3Cpath d='M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80' fill='none' stroke='%2300e5ff' stroke-width='4' stroke-linecap='round' filter='url(%23glow-heavy)'/%3E%3Cpath d='M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80' fill='none' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='122' cy='22' r='5' fill='%2300e5ff' filter='url(%23glow-heavy)'/%3E%3Ccircle cx='122' cy='22' r='2.5' fill='%23ffffff'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <style>
   :root {
     --bg-app:     #ffffff; /* Main chat background */
@@ -443,6 +445,17 @@
   .login-title { font-size: 1.45rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; }
   .login-subtitle { font-size: 0.8rem; color: #8a8a93; margin-bottom: 28px; line-height: 1.45; }
   .login-desc { font-size: 0.82rem; color: #a1a1aa; margin-bottom: 24px; line-height: 1.55; text-align: center; }
+  
+  /* Circular cropper styling override */
+  .cropper-view-box,
+  .cropper-face,
+  .cropper-crop-box {
+    border-radius: 50% !important;
+  }
+  .cropper-view-box {
+    outline: 0 !important;
+    box-shadow: 0 0 0 2px #00e5ff !important;
+  }
 
   /* ── Form Styling ── */
   .input-group { margin-bottom: 20px; text-align: left; }
@@ -522,9 +535,9 @@
   }
   .profile-info { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .profile-avatar {
-    width: 22px; height: 22px; border-radius: 50%; background: var(--accent);
+    width: 32px; height: 32px; border-radius: 50%; background: var(--accent);
     color: #ffffff; display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 0.7rem; text-transform: uppercase; flex-shrink: 0;
+    font-weight: 700; font-size: 0.9rem; text-transform: uppercase; flex-shrink: 0;
   }
   .profile-name { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-weight: 600; color: #e4e4e7; }
   .logout-btn {
@@ -636,10 +649,12 @@
     </div>
     <div id="login-subtitle-txt" class="login-subtitle">Intelligence Research Console</div>
     
-    <!-- Unified Login View -->
+    <!-- Unified Login / Register Views -->
     <div class="login-views-container">
+      
+      <!-- LOGIN VIEW -->
       <div id="login-view-main" class="login-view active">
-        <p class="login-desc">Sign in with your username, email, and password to access the Research Console.</p>
+        <p class="login-desc">Sign in with your email and password to access the Research Console.</p>
         
         <!-- Error Alert -->
         <div id="login-error-alert" class="file-warning" style="margin-bottom: 20px; border-color: #ef4444; background: rgba(239, 68, 68, 0.06); display: none;">
@@ -647,15 +662,11 @@
             <span>⚠️</span> Sign In Failed
           </div>
           <div id="login-error-msg" class="file-warning-desc" style="color: #e4e4e7; font-size: 0.75rem;">
-            Incorrect password.
+            Incorrect credentials.
           </div>
         </div>
         
         <form onsubmit="handleLogin(event)">
-          <div class="input-group" style="margin-bottom: 16px;">
-            <label class="form-label">Username</label>
-            <input type="text" id="login-username" class="login-input" placeholder="e.g. Director" required autocomplete="off">
-          </div>
           <div class="input-group" style="margin-bottom: 16px;">
             <label class="form-label">Email Address</label>
             <input type="email" id="login-email" class="login-input" placeholder="e.g. director@company.com" required autocomplete="off">
@@ -666,7 +677,56 @@
           </div>
           <button type="submit" class="login-btn-premium">Sign In</button>
         </form>
+        
+        <div class="login-footer-text" style="text-align: center; margin-top: 24px;">
+          New to Ankush? <a href="#" class="login-footer-link" onclick="showRegisterView(); return false;">Register an account</a>
+        </div>
       </div>
+
+      <!-- REGISTER VIEW -->
+      <div id="login-view-register" class="login-view">
+        <p class="login-desc">Create a new account to initialize your Research Console.</p>
+        
+        <!-- Error Alert -->
+        <div id="register-error-alert" class="file-warning" style="margin-bottom: 20px; border-color: #ef4444; background: rgba(239, 68, 68, 0.06); display: none;">
+          <div class="file-warning-title" style="color: #ef4444; font-weight: 700; font-size: 0.8rem; margin-bottom: 6px;">
+            <span>⚠️</span> Registration Failed
+          </div>
+          <div id="register-error-msg" class="file-warning-desc" style="color: #e4e4e7; font-size: 0.75rem;">
+            Account already exists.
+          </div>
+        </div>
+        
+        <form onsubmit="handleRegister(event)">
+          <div class="input-group" style="margin-bottom: 16px;">
+            <label class="form-label">Username</label>
+            <input type="text" id="register-username" class="login-input" placeholder="e.g. Director" required autocomplete="off">
+          </div>
+          <div class="input-group" style="margin-bottom: 16px;">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="register-email" class="login-input" placeholder="e.g. director@company.com" required autocomplete="off">
+          </div>
+          <div class="input-group" style="margin-bottom: 16px;">
+            <label class="form-label">Password</label>
+            <input type="password" id="register-password" class="login-input" placeholder="••••••••" required autocomplete="off">
+          </div>
+          <div class="input-group" style="margin-bottom: 24px;">
+            <label class="form-label">Profile Photo (Optional)</label>
+            <input type="file" id="register-pfp-file" accept="image/*" onchange="handleRegisterPfpUpload(event)" style="width: 100%; border: none; padding: 4px 0; background: transparent; color: #a1a1aa; font-size: 0.8rem;">
+            <input type="hidden" id="register-pfp-data" value="">
+            <div id="register-pfp-preview-container" style="display: none; align-items: center; gap: 10px; margin-top: 10px;">
+              <div id="register-pfp-preview" style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;"></div>
+              <span style="font-size: 0.75rem; color: #a1a1aa;">Photo ready!</span>
+            </div>
+          </div>
+          <button type="submit" class="login-btn-premium">Register</button>
+        </form>
+        
+        <div class="login-footer-text" style="text-align: center; margin-top: 24px;">
+          Already have an account? <a href="#" class="login-footer-link" onclick="showLoginView(); return false;">Sign In</a>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -749,7 +809,14 @@
       <button class="add-char-btn" onclick="openModal('personas-modal')">+ Add Custom Agent</button>
     </div>
     
-    <div id="sidebar-footer">
+    <div id="sidebar-footer" style="display: flex; flex-direction: column; gap: 4px;">
+      <button class="footer-btn" onclick="openModal('profile-modal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        Profile Settings
+      </button>
       <button class="footer-btn" onclick="openModal('settings-modal')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
@@ -757,7 +824,7 @@
         </svg>
         API Settings
       </button>
-      <div class="profile-bar">
+      <div class="profile-bar" style="margin-top: 8px;">
         <div class="profile-info">
           <span class="profile-avatar" id="profile-avatar-char">G</span>
           <span class="profile-name" id="profile-display-name">Guest</span>
@@ -783,7 +850,6 @@
         <span class="active-persona-name" id="active-persona-name">Ankush</span>
       </div>
       <div id="hdr-right">
-        <span class="model-badge" id="model-badge">Llama 3.3</span>
       </div>
     </div>
     
@@ -877,18 +943,80 @@
         <form id="settings-form" onsubmit="saveSettings(event)">
           <div class="form-group" style="margin-bottom: 12px;">
             <label>API Endpoint Base URL</label>
-            <input type="url" id="settings-api-url" required autocomplete="off">
+            <input type="url" id="settings-api-url" required autocomplete="off" style="width: 100%;">
           </div>
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label>Model Identifier</label>
-            <input type="text" id="settings-model" required autocomplete="off">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>Select Model Choice</label>
+            <div class="model-slots-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px;">
+              <div class="model-slot" data-model="meta-llama/llama-3.3-70b-instruct:free" onclick="selectModelSlot(this)" style="border: 1.5px solid var(--border); background: var(--bg-chat); border-radius: 8px; padding: 10px 6px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+                <div style="font-weight: 700; font-size: 0.8rem; color: var(--text);">Llama 3.3</div>
+                <div style="font-size: 0.65rem; color: var(--text-dim);">70B General</div>
+              </div>
+              <div class="model-slot" data-model="deepseek/deepseek-r1:free" onclick="selectModelSlot(this)" style="border: 1.5px solid var(--border); background: var(--bg-chat); border-radius: 8px; padding: 10px 6px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+                <div style="font-weight: 700; font-size: 0.8rem; color: var(--text);">DeepSeek R1</div>
+                <div style="font-size: 0.65rem; color: var(--text-dim);">Reasoning</div>
+              </div>
+              <div class="model-slot" data-model="google/gemini-2.5-flash:free" onclick="selectModelSlot(this)" style="border: 1.5px solid var(--border); background: var(--bg-chat); border-radius: 8px; padding: 10px 6px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+                <div style="font-weight: 700; font-size: 0.8rem; color: var(--text);">Gemini 2.5</div>
+                <div style="font-size: 0.65rem; color: var(--text-dim);">Flash Fast</div>
+              </div>
+            </div>
+            <input type="hidden" id="settings-model" value="meta-llama/llama-3.3-70b-instruct:free">
           </div>
           <div class="form-group" style="margin-bottom: 16px;">
             <label>API Bearer Key</label>
-            <input type="password" id="settings-api-key" placeholder="Enter API Key (optional)" autocomplete="off">
+            <input type="password" id="settings-api-key" placeholder="Enter API Key (optional)" autocomplete="off" style="width: 100%;">
           </div>
           <button type="submit" class="primary-btn" style="width: 100%;">Save Configuration</button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROFILE MODAL ── -->
+  <div id="profile-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-hdr">
+        <span>Profile Settings</span>
+        <button class="modal-close" onclick="closeModal('profile-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="profile-form" onsubmit="saveProfileSettings(event)">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>Display Name</label>
+            <input type="text" id="profile-settings-username" required autocomplete="off" style="width: 100%;">
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>Upload Profile Photo</label>
+            <input type="file" id="profile-settings-pfp-file" accept="image/*" onchange="handleProfilePfpUpload(event)" style="width: 100%; border: none; padding: 4px 0; background: transparent; color: var(--text-dim); font-size: 0.85rem;">
+            
+            <!-- Preview of currently active pfp or selected crop -->
+            <div id="profile-pfp-preview-container" style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
+              <div id="profile-pfp-preview" style="width: 44px; height: 44px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; overflow: hidden;"></div>
+              <span style="font-size: 0.78rem; color: var(--text-dim);" id="profile-pfp-preview-status">Active profile photo</span>
+            </div>
+          </div>
+          <button type="submit" class="primary-btn" style="width: 100%;">Save Profile</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CROPPER MODAL ── -->
+  <div id="cropper-modal" class="modal-overlay" style="display: none; position: fixed; z-index: 300; background: rgba(0, 0, 0, 0.65);">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-hdr">
+        <span>Crop Profile Picture</span>
+        <button class="modal-close" onclick="closeCropperModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+        <div style="width: 100%; max-height: 280px; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+          <img id="cropper-image" style="max-width: 100%; max-height: 280px; display: block;">
+        </div>
+        <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px;">
+          <button type="button" class="primary-btn" style="flex: 1; background: transparent; border: 1px solid var(--border); color: var(--text-dim);" onclick="closeCropperModal()">Cancel</button>
+          <button type="button" class="primary-btn" style="flex: 1;" onclick="applyCrop()">Crop & Save</button>
+        </div>
       </div>
     </div>
   </div>
@@ -958,7 +1086,7 @@ ACCURACY RULES:
 - Never present speculation as fact
 - Distinguish between confirmed reports and unverified claims
 - If sources conflict, present both sides
-- Always include source citations at end of response in format: SOURCE [N]: <url>`
+- Always include source citations at end of response in format: SOURCE [N]: [Name of Source] — "Headline/Title of Article" — <url>`
   }
 ];
 
@@ -983,14 +1111,38 @@ function loadProfileData() {
   const avatarChar = document.getElementById('profile-avatar-char');
   const displayName = document.getElementById('profile-display-name');
   
-  if (displayName) displayName.textContent = activeUsername;
+  let userDb = [];
+  try {
+    userDb = JSON.parse(localStorage.getItem('ankush_user_db')) || [];
+  } catch (err) {
+    userDb = [];
+  }
+  
+  const currentUser = userDb.find(u => u.email === activeProfile) || { username: activeUsername };
+  
+  if (displayName) displayName.textContent = currentUser.username;
   if (avatarChar) {
-    avatarChar.textContent = activeUsername.charAt(0).toUpperCase();
-    avatarChar.style.background = 'linear-gradient(135deg, #00f2fe, #3866f2)';
+    if (currentUser.pfp) {
+      avatarChar.innerHTML = `<img src="${currentUser.pfp}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+      avatarChar.style.background = 'none';
+    } else {
+      avatarChar.textContent = currentUser.username.charAt(0).toUpperCase();
+      avatarChar.innerHTML = currentUser.username.charAt(0).toUpperCase();
+      avatarChar.style.background = 'linear-gradient(135deg, #00f2fe, #3866f2)';
+    }
   }
   
   settings = JSON.parse(localStorage.getItem(`ankush_settings_${activeProfile}`)) || { ...defaultSettings };
-  characters = JSON.parse(localStorage.getItem(`ankush_characters_${activeProfile}`)) || [ ...DEFAULT_CHARACTERS ];
+  characters = JSON.parse(localStorage.getItem(`ankush_characters_${activeProfile}`)) || [];
+  const ankushIndex = characters.findIndex(c => c.id === 'ankush');
+  if (ankushIndex !== -1) {
+    characters[ankushIndex].systemPrompt = DEFAULT_CHARACTERS[0].systemPrompt;
+    characters[ankushIndex].subtitle = DEFAULT_CHARACTERS[0].subtitle;
+  } else {
+    characters.unshift(DEFAULT_CHARACTERS[0]);
+  }
+  localStorage.setItem(`ankush_characters_${activeProfile}`, JSON.stringify(characters));
+  
   activeCharId = localStorage.getItem(`ankush_active_char_id_${activeProfile}`) || 'ankush';
   activeCharacter = characters.find(c => c.id === activeCharId) || characters[0];
   
@@ -1039,19 +1191,45 @@ function clearLoginError() {
   if (alertEl) alertEl.style.display = 'none';
 }
 
+function showRegisterError(msg) {
+  const alertEl = document.getElementById('register-error-alert');
+  const msgEl = document.getElementById('register-error-msg');
+  if (alertEl && msgEl) {
+    msgEl.textContent = msg;
+    alertEl.style.display = 'block';
+  }
+}
+
+function clearRegisterError() {
+  const alertEl = document.getElementById('register-error-alert');
+  if (alertEl) alertEl.style.display = 'none';
+}
+
+function showLoginView() {
+  clearLoginError();
+  clearRegisterError();
+  document.getElementById('login-view-register').classList.remove('active');
+  document.getElementById('login-view-main').classList.add('active');
+}
+
+function showRegisterView() {
+  clearLoginError();
+  clearRegisterError();
+  document.getElementById('login-view-main').classList.remove('active');
+  document.getElementById('login-view-register').classList.add('active');
+}
+
 /* ── Login/Logout Handlers ── */
 function handleLogin(e) {
   e.preventDefault();
   clearLoginError();
   
-  const usernameInput = document.getElementById('login-username');
   const emailInput = document.getElementById('login-email');
   const passwordInput = document.getElementById('login-password');
-  if (!usernameInput || !emailInput || !passwordInput) return;
-  const username = usernameInput.value.trim();
+  if (!emailInput || !passwordInput) return;
   const email = emailInput.value.trim().toLowerCase();
   const password = passwordInput.value;
-  if (!username || !email || !password) return;
+  if (!email || !password) return;
   
   // Local Storage Account Authenticator
   let userDb = [];
@@ -1062,21 +1240,68 @@ function handleLogin(e) {
   }
   
   const existingUser = userDb.find(u => u.email === email);
-  if (existingUser) {
-    if (existingUser.password !== password) {
-      showLoginError('Incorrect password for this email address.');
-      return;
-    }
-    // Update username if they decided to sign in with a different display name
-    if (existingUser.username !== username) {
-      existingUser.username = username;
-      localStorage.setItem('ankush_user_db', JSON.stringify(userDb));
-    }
-  } else {
-    // Register new user on the fly
-    userDb.push({ username, email, password });
-    localStorage.setItem('ankush_user_db', JSON.stringify(userDb));
+  if (!existingUser) {
+    showLoginError('No account found with this email. Please register first.');
+    return;
   }
+  
+  if (existingUser.password !== password) {
+    showLoginError('Incorrect password.');
+    return;
+  }
+  
+  localStorage.setItem('ankush_active_profile', email);
+  localStorage.setItem('ankush_active_username', existingUser.username);
+  activeProfile = email;
+  activeUsername = existingUser.username;
+  
+  document.getElementById('login-overlay').style.display = 'none';
+  emailInput.value = '';
+  passwordInput.value = '';
+  
+  loadProfileData();
+  
+  const badge = document.getElementById('model-badge');
+  if (badge && settings) badge.textContent = settings.model.split('/').pop().slice(0, 20);
+  
+  initToggles();
+  renderCharacterList();
+  renderHistoryList();
+  applyActiveCharacter(activeCharacter);
+  initChat();
+}
+
+function handleRegister(e) {
+  e.preventDefault();
+  clearRegisterError();
+  
+  const usernameInput = document.getElementById('register-username');
+  const emailInput = document.getElementById('register-email');
+  const passwordInput = document.getElementById('register-password');
+  const pfpDataInput = document.getElementById('register-pfp-data');
+  if (!usernameInput || !emailInput || !passwordInput) return;
+  
+  const username = usernameInput.value.trim();
+  const email = emailInput.value.trim().toLowerCase();
+  const password = passwordInput.value;
+  const pfp = pfpDataInput ? pfpDataInput.value : '';
+  if (!username || !email || !password) return;
+  
+  let userDb = [];
+  try {
+    userDb = JSON.parse(localStorage.getItem('ankush_user_db')) || [];
+  } catch (err) {
+    userDb = [];
+  }
+  
+  const existingUser = userDb.find(u => u.email === email);
+  if (existingUser) {
+    showRegisterError('An account with this email already exists.');
+    return;
+  }
+  
+  userDb.push({ username, email, password, pfp });
+  localStorage.setItem('ankush_user_db', JSON.stringify(userDb));
   
   localStorage.setItem('ankush_active_profile', email);
   localStorage.setItem('ankush_active_username', username);
@@ -1087,6 +1312,12 @@ function handleLogin(e) {
   usernameInput.value = '';
   emailInput.value = '';
   passwordInput.value = '';
+  if (pfpDataInput) pfpDataInput.value = '';
+  
+  const pfpPreviewContainer = document.getElementById('register-pfp-preview-container');
+  if (pfpPreviewContainer) pfpPreviewContainer.style.display = 'none';
+  const registerPfpFile = document.getElementById('register-pfp-file');
+  if (registerPfpFile) registerPfpFile.value = '';
   
   loadProfileData();
   
@@ -1119,6 +1350,167 @@ function handleLogout() {
   document.getElementById('profile-display-name').textContent = 'Guest';
 }
 
+let tempProfilePfpDataUrl = '';
+let cropperInstance = null;
+let cropperContext = 'profile'; // 'profile' or 'register'
+
+function getRoundedCanvas(sourceCanvas) {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  const width = sourceCanvas.width;
+  const height = sourceCanvas.height;
+
+  canvas.width = width;
+  canvas.height = height;
+  context.imageSmoothingEnabled = true;
+  
+  context.beginPath();
+  context.arc(width / 2, height / 2, Math.min(width, height) / 2, 0, 2 * Math.PI, true);
+  context.clip();
+  
+  context.drawImage(sourceCanvas, 0, 0, width, height);
+  return canvas;
+}
+
+function handleProfilePfpUpload(e) {
+  cropperContext = 'profile';
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Please choose a smaller image file (under 2MB).');
+    e.target.value = '';
+    return;
+  }
+  
+  const url = URL.createObjectURL(file);
+  const cropperImage = document.getElementById('cropper-image');
+  if (cropperImage) {
+    cropperImage.src = url;
+  }
+  
+  document.getElementById('cropper-modal').style.display = 'flex';
+  
+  // Set small delay to ensure image DOM loading before Cropper.js initialization
+  setTimeout(() => {
+    if (cropperInstance) {
+      cropperInstance.destroy();
+    }
+    cropperInstance = new Cropper(cropperImage, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.9,
+      restore: false,
+      guides: false,
+      center: false,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+    });
+  }, 150);
+}
+
+function handleRegisterPfpUpload(e) {
+  cropperContext = 'register';
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Please choose a smaller image file (under 2MB).');
+    e.target.value = '';
+    return;
+  }
+  
+  const url = URL.createObjectURL(file);
+  const cropperImage = document.getElementById('cropper-image');
+  if (cropperImage) {
+    cropperImage.src = url;
+  }
+  
+  document.getElementById('cropper-modal').style.display = 'flex';
+  
+  // Set small delay to ensure image DOM loading before Cropper.js initialization
+  setTimeout(() => {
+    if (cropperInstance) {
+      cropperInstance.destroy();
+    }
+    cropperInstance = new Cropper(cropperImage, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 0.9,
+      restore: false,
+      guides: false,
+      center: false,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+    });
+  }, 150);
+}
+
+function applyCrop() {
+  if (cropperInstance) {
+    const canvas = cropperInstance.getCroppedCanvas({
+      width: 120,
+      height: 120
+    });
+    if (canvas) {
+      const roundedCanvas = getRoundedCanvas(canvas);
+      const dataUrl = roundedCanvas.toDataURL('image/png');
+      
+      if (cropperContext === 'profile') {
+        tempProfilePfpDataUrl = dataUrl;
+        const previewEl = document.getElementById('profile-pfp-preview');
+        const statusEl = document.getElementById('profile-pfp-preview-status');
+        if (previewEl) {
+          previewEl.innerHTML = `<img src="${dataUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        }
+        if (statusEl) {
+          statusEl.textContent = 'New photo cropped & ready!';
+        }
+      } else if (cropperContext === 'register') {
+        document.getElementById('register-pfp-data').value = dataUrl;
+        const previewEl = document.getElementById('register-pfp-preview');
+        const containerEl = document.getElementById('register-pfp-preview-container');
+        if (previewEl && containerEl) {
+          previewEl.innerHTML = `<img src="${dataUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+          containerEl.style.display = 'flex';
+        }
+      }
+    }
+  }
+  closeCropperModal();
+}
+
+function closeCropperModal() {
+  if (cropperInstance) {
+    cropperInstance.destroy();
+    cropperInstance = null;
+  }
+  document.getElementById('cropper-modal').style.display = 'none';
+  const fileInputProfile = document.getElementById('profile-settings-pfp-file');
+  if (fileInputProfile) fileInputProfile.value = '';
+  const fileInputRegister = document.getElementById('register-pfp-file');
+  if (fileInputRegister) fileInputRegister.value = '';
+}
+
+function selectModelSlot(element) {
+  const slots = document.querySelectorAll('.model-slot');
+  slots.forEach(slot => {
+    slot.style.borderColor = 'var(--border)';
+    slot.style.background = 'var(--bg-chat)';
+  });
+  element.style.borderColor = 'var(--accent)';
+  element.style.background = 'var(--accent-dim)';
+  
+  const modelValue = element.getAttribute('data-model');
+  document.getElementById('settings-model').value = modelValue;
+}
+
 /* ── Modals logic ── */
 function openModal(id) {
   const modal = document.getElementById(id);
@@ -1126,8 +1518,60 @@ function openModal(id) {
     modal.style.display = 'flex';
     if (id === 'settings-modal' && settings) {
       document.getElementById('settings-api-url').value = settings.apiUrl;
-      document.getElementById('settings-model').value = settings.model;
       document.getElementById('settings-api-key').value = settings.apiKey === 'unused' ? '' : settings.apiKey;
+      
+      const modelVal = settings.model;
+      document.getElementById('settings-model').value = modelVal;
+      
+      const slots = document.querySelectorAll('.model-slot');
+      let found = false;
+      slots.forEach(slot => {
+        const m = slot.getAttribute('data-model');
+        if (m === modelVal) {
+          slot.style.borderColor = 'var(--accent)';
+          slot.style.background = 'var(--accent-dim)';
+          found = true;
+        } else {
+          slot.style.borderColor = 'var(--border)';
+          slot.style.background = 'var(--bg-chat)';
+        }
+      });
+      if (!found && slots.length > 0) {
+        slots[0].style.borderColor = 'var(--accent)';
+        slots[0].style.background = 'var(--accent-dim)';
+        document.getElementById('settings-model').value = slots[0].getAttribute('data-model');
+      }
+    } else if (id === 'profile-modal') {
+      let userDb = [];
+      try {
+        userDb = JSON.parse(localStorage.getItem('ankush_user_db')) || [];
+      } catch (err) {
+        userDb = [];
+      }
+      const currentUser = userDb.find(u => u.email === activeProfile) || { username: activeUsername, pfp: '' };
+      
+      document.getElementById('profile-settings-username').value = currentUser.username;
+      
+      const fileInput = document.getElementById('profile-settings-pfp-file');
+      if (fileInput) fileInput.value = '';
+      
+      tempProfilePfpDataUrl = currentUser.pfp || '';
+      
+      // Update preview in modal
+      const previewEl = document.getElementById('profile-pfp-preview');
+      const statusEl = document.getElementById('profile-pfp-preview-status');
+      if (previewEl) {
+        if (currentUser.pfp) {
+          previewEl.innerHTML = `<img src="${currentUser.pfp}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        } else {
+          const initial = currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'G';
+          previewEl.textContent = initial;
+          previewEl.innerHTML = initial;
+        }
+      }
+      if (statusEl) {
+        statusEl.textContent = 'Active profile photo';
+      }
     }
   }
 }
@@ -1153,9 +1597,38 @@ function saveSettings(e) {
   settings.apiKey = key || 'unused';
   
   localStorage.setItem(`ankush_settings_${activeProfile}`, JSON.stringify(settings));
-  document.getElementById('model-badge').textContent = settings.model.split('/').pop().slice(0, 20);
+  const badge = document.getElementById('model-badge');
+  if (badge) badge.textContent = settings.model.split('/').pop().slice(0, 20);
   
   closeModal('settings-modal');
+}
+
+function saveProfileSettings(e) {
+  e.preventDefault();
+  
+  const newUsername = document.getElementById('profile-settings-username').value.trim();
+  
+  if (newUsername) {
+    let userDb = [];
+    try {
+      userDb = JSON.parse(localStorage.getItem('ankush_user_db')) || [];
+    } catch (err) {
+      userDb = [];
+    }
+    
+    const currentUser = userDb.find(u => u.email === activeProfile);
+    if (currentUser) {
+      currentUser.username = newUsername;
+      currentUser.pfp = tempProfilePfpDataUrl;
+      localStorage.setItem('ankush_user_db', JSON.stringify(userDb));
+      
+      localStorage.setItem('ankush_active_username', newUsername);
+      activeUsername = newUsername;
+    }
+  }
+  
+  loadProfileData();
+  closeModal('profile-modal');
 }
 
 function renderCharacterList() {
@@ -1691,8 +2164,10 @@ async function gatherIntel(query) {
       contextBlock += 'ADDITIONAL CONTEXT:\n';
       ddgItems.slice(0,3).forEach(item => {
         if (item.text && item.url) {
-          allSources.push({ title: item.title, url: item.url, source: 'DuckDuckGo/Web' });
-          contextBlock += `[${allSources.length}] ${item.title}: ${item.text.slice(0,180)}\n`;
+          const fallback = getUrlMetadataFallback(item.url);
+          const domainSource = fallback.domain || 'Web Search';
+          allSources.push({ title: item.title, url: item.url, source: domainSource });
+          contextBlock += `[${allSources.length}] ${domainSource} — ${item.title}: ${item.text.slice(0,180)}\n`;
         }
       });
     }
@@ -1701,9 +2176,53 @@ async function gatherIntel(query) {
   return { contextBlock: contextBlock.trim(), sources: allSources };
 }
 
-function formatArticleBody(text) {
+function getUrlMetadataFallback(urlStr) {
+  let domain = '';
+  let title = '';
+  try {
+    const url = new URL(urlStr);
+    domain = url.hostname.replace(/^www\./, '');
+    
+    // Capitalize domain parts nicely
+    domain = domain.split('.')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('.');
+      
+    // Extract path segment for title fallback
+    const pathParts = url.pathname.split('/').filter(p => p.length > 0);
+    if (pathParts.length > 0) {
+      let lastPart = pathParts[pathParts.length - 1];
+      lastPart = lastPart.replace(/\.[a-zA-Z0-9]+$/, '');
+      
+      // Clean up hyphens and underscores
+      let cleanTitle = lastPart.replace(/[-_]+/g, ' ').trim();
+      
+      const isDigitOnly = /^\d+$/.test(cleanTitle);
+      const isTooShort = cleanTitle.length < 4;
+      const isAlphanumericCode = !cleanTitle.includes(' ') && /(?=.*\d)(?=.*[a-zA-Z])/.test(cleanTitle);
+      const GENERIC_SEGMENTS = ['index', 'watch', 'page', 'post', 'feed', 'article', 'home', 'default', 'main'];
+      const isGeneric = GENERIC_SEGMENTS.includes(cleanTitle.toLowerCase());
+      
+      if (cleanTitle.length > 0 && !isDigitOnly && !isTooShort && !isAlphanumericCode && !isGeneric) {
+        // Capitalize words
+        title = cleanTitle.split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      }
+    }
+  } catch (e) {}
+  return { domain, title };
+}
+
+function formatArticleBody(text, sources) {
   let escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   
+  // Format markdown links: [text](url)
+  escaped = escaped.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g, (match, p1, p2) => {
+    const cleanUrl = p2.replace(/&amp;/g, '&');
+    return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline; font-weight: 500;">${p1}</a>`;
+  });
+
   // Format bold, italic, code
   escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong style="font-weight:600;color:var(--text);">$1</strong>');
   escaped = escaped.replace(/\*(.+?)\*/g, '<em style="color:var(--text-dim);">$1</em>');
@@ -1712,6 +2231,81 @@ function formatArticleBody(text) {
   const lines = escaped.split('\n');
   const formattedLines = lines.map(line => {
     const trimmed = line.trim();
+    
+    // Custom formatted bibliography sources
+    // Matches: SOURCE [1]: url, [1]: url, [1] url, Source [1] - url, etc.
+    const sourceMatch = trimmed.match(/^(?:SOURCE\s*)?\[(\d+)\]\s*[:\-]?\s*(.*)$/i);
+    if (sourceMatch) {
+      const citationId = sourceMatch[1];
+      let citationUrl = sourceMatch[2].trim();
+      
+      // Clean up markdown brackets, angle brackets, or spaces
+      const mdLinkMatch = citationUrl.match(/\[.*?\]\((https?:\/\/[^\s\)]+)\)/);
+      if (mdLinkMatch) {
+        citationUrl = mdLinkMatch[1];
+      } else {
+        const angleMatch = citationUrl.match(/&lt;(https?:\/\/[^\s&gt;]+)&gt;/);
+        if (angleMatch) {
+          citationUrl = angleMatch[1];
+        } else {
+          const urlMatch = citationUrl.match(/(https?:\/\/[^\s]+)/);
+          if (urlMatch) {
+            citationUrl = urlMatch[1];
+          }
+        }
+      }
+      
+      // Remove trailing periods, commas, or parentheses
+      citationUrl = citationUrl.replace(/[\.,\)]+$/, '');
+      const cleanUrl = citationUrl.replace(/&amp;/g, '&');
+      
+      let sourceName = '';
+      let headline = '';
+      
+      // Cross-reference search results first if available
+      const citationIdInt = parseInt(citationId, 10);
+      const matchedSource = (sources && citationIdInt > 0 && citationIdInt <= sources.length) ? sources[citationIdInt - 1] : null;
+      
+      if (matchedSource) {
+        sourceName = matchedSource.source || '';
+        headline = matchedSource.title || '';
+      }
+      
+      // Fallback: Try to split parts (source name, headline, URL) if provided by LLM
+      if (!sourceName || !headline) {
+        const parts = sourceMatch[2].split(/\s*[\u2014\u2013]|\s+-\s+|\s*\|\s*/); // splits by —, –, -, or |
+        if (parts.length >= 2) {
+          const urlCandidate = parts[parts.length - 1].trim();
+          const urlMatch = urlCandidate.match(/(https?:\/\/[^\s]+)/);
+          if (urlMatch) {
+            if (parts.length === 3) {
+              sourceName = parts[0].trim();
+              headline = parts[1].trim().replace(/^["']|["']$/g, ''); // remove quotes
+            } else if (parts.length === 2) {
+              sourceName = parts[0].trim();
+            }
+          }
+        }
+      }
+      
+      // Fallback metadata if not provided by search results or LLM
+      if (!sourceName || !headline) {
+        const meta = getUrlMetadataFallback(cleanUrl);
+        if (!sourceName) sourceName = meta.domain;
+        if (!headline) headline = meta.title;
+      }
+      
+      let htmlOutput = `<span style="color: var(--accent); font-weight: 600;">Source [${citationId}]:</span> `;
+      if (sourceName) {
+        htmlOutput += `<span style="font-weight: 600; color: var(--text);">${sourceName}</span>`;
+      }
+      if (headline) {
+        htmlOutput += ` — <span style="font-style: italic; color: var(--text-dim);">"${headline}"</span>`;
+      }
+      htmlOutput += ` — <a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline; word-break: break-all;">${cleanUrl}</a>`;
+      
+      return `<div class="source-citation-line" style="font-size: 0.78rem; color: var(--text-dim); margin-top: 4px; font-family: var(--mono);">${htmlOutput}</div>`;
+    }
     
     // Headers
     const headerMatch = trimmed.match(/^(?:<strong[^>]*>)?(KEY POINTS|SUMMARY|CONCLUSION|NOTE|WARNING|ANALYSIS|BRIEFING|OVERVIEW|FINDINGS|RECOMMENDATION):?(?:<\/strong>)?:?\s*(.*)$/i);
@@ -1780,20 +2374,42 @@ function addBubble(side, text, sources, saveToHistory = true) {
 
   if (side === 'boss') {
     // User Message
+    let pfpHtml = '';
+    let userDb = [];
+    try {
+      userDb = JSON.parse(localStorage.getItem('ankush_user_db')) || [];
+    } catch (err) {}
+    const currentUser = userDb.find(u => u.email === activeProfile) || { username: activeUsername };
+    
+    if (currentUser && currentUser.pfp) {
+      pfpHtml = `<img src="${currentUser.pfp}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+    } else {
+      const initial = (currentUser && currentUser.username) ? currentUser.username.charAt(0).toUpperCase() : 'B';
+      pfpHtml = `<div style="width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, #00f2fe, #3866f2); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem;">${initial}</div>`;
+    }
+
+    const senderName = (currentUser && currentUser.username) ? currentUser.username : 'Boss';
+
     row.innerHTML = `
       <div class="bub-wrap">
-        <div class="sender">Boss</div>
+        <div class="sender">${senderName}</div>
         <div class="bub boss"></div>
         <div class="ts">${now()}</div>
+      </div>
+      <div class="mini-av" style="background: none; border: none; box-shadow: none;">
+        ${pfpHtml}
       </div>
     `;
     row.querySelector('.bub.boss').textContent = text;
   } else {
     // Assistant Message
     const aiSvg = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2z"/>
-        <path d="M12 6v6l4 2"/>
+      <svg viewBox="0 0 200 100" style="width: 24px; height: 12px; overflow: visible;" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80" 
+              fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" />
+        <path d="M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80" 
+              fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="122" cy="22" r="10" fill="var(--accent)"/>
       </svg>
     `;
     
@@ -1807,7 +2423,7 @@ function addBubble(side, text, sources, saveToHistory = true) {
         <div class="ts">${now()}</div>
       </div>
     `;
-    row.querySelector('.bub.aria').innerHTML = formatArticleBody(text);
+    row.querySelector('.bub.aria').innerHTML = formatArticleBody(text, sources);
     
     if (sources && sources.length > 0) {
       const footnoteDiv = document.createElement('div');
@@ -1863,9 +2479,12 @@ function showTyping() {
   typingDiv.className = 'row aria';
   
   const aiSvg = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2z"/>
-      <path d="M12 6v6l4 2"/>
+    <svg viewBox="0 0 200 100" style="width: 24px; height: 12px; overflow: visible;" xmlns="http://www.w3.org/2000/svg">
+      <path d="M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80" 
+            fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" />
+      <path d="M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80" 
+            fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="122" cy="22" r="10" fill="var(--accent)"/>
     </svg>
   `;
   
@@ -1961,12 +2580,26 @@ async function sendMsg() {
       })
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      let errorDetail = `HTTP ${res.status}`;
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.error && errJson.error.message) {
+          errorDetail = `${res.status}: ${errJson.error.message}`;
+        }
+      } catch (e) {
+        try {
+          const errText = await res.text();
+          if (errText) errorDetail = `${res.status}: ${errText.slice(0, 150)}`;
+        } catch (e2) {}
+      }
+      throw new Error(errorDetail);
+    }
     const data  = await res.json();
     let reply   = data?.choices?.[0]?.message?.content?.trim();
-    if (!reply) throw new Error('Empty');
+    if (!reply) throw new Error('Empty response from model');
 
-    reply = reply.replace(/^SOURCE\s*\[\d+\].*$/gmi, '').replace(/\n{3,}/g, '\n\n').trim();
+    reply = reply.replace(/\n{3,}/g, '\n\n').trim();
 
     killTyping(); setStatus('', false);
     addBubble('aria', reply, sources.length > 0 ? sources : null, true);
@@ -1974,7 +2607,8 @@ async function sendMsg() {
   } catch (err) {
     killTyping(); setStatus('', false);
     console.error(err);
-    addBubble('aria', 'Apologies, Sir. I encountered a connectivity issue while retrieving data. Please check your settings or try again.', null, false);
+    const detailMsg = `Apologies, Sir. I encountered a connectivity issue while retrieving data. Please check your settings or try again.\n\n**Details:** \`${err.message}\``;
+    addBubble('aria', detailMsg, null, false);
   }
 
   sendBtn.disabled = false;
