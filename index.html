@@ -10,7 +10,6 @@
 <title>Ankush — Intelligence Console</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 200 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='glow-heavy' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='5' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80' fill='none' stroke='%2300e5ff' stroke-width='5' stroke-linecap='round' filter='url(%23glow-heavy)'/%3E%3Cpath d='M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80' fill='none' stroke='%2300e5ff' stroke-width='4' stroke-linecap='round' filter='url(%23glow-heavy)'/%3E%3Cpath d='M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80' fill='none' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='122' cy='22' r='5' fill='%2300e5ff' filter='url(%23glow-heavy)'/%3E%3Ccircle cx='122' cy='22' r='2.5' fill='%23ffffff'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
     --bg-app:     #ffffff; /* Main chat background */
@@ -443,6 +442,7 @@
   .login-icon-box svg { width: 26px; height: 13px; }
   .login-title { font-size: 1.45rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; }
   .login-subtitle { font-size: 0.8rem; color: #8a8a93; margin-bottom: 28px; line-height: 1.45; }
+  .login-desc { font-size: 0.82rem; color: #a1a1aa; margin-bottom: 24px; line-height: 1.55; text-align: center; }
 
   /* ── Form Styling ── */
   .input-group { margin-bottom: 20px; text-align: left; }
@@ -636,82 +636,37 @@
     </div>
     <div id="login-subtitle-txt" class="login-subtitle">Intelligence Research Console</div>
     
-    <!-- File Protocol Warning -->
-    <div id="file-warning-banner" class="file-warning">
-      <div class="file-warning-title">
-        <span>⚠️</span> Local File System Detected
-      </div>
-      <div class="file-warning-desc">
-        Google OAuth does not support direct <code>file://</code> launch. Please serve this app locally by double-clicking the <code>run.bat</code> file.
-      </div>
-    </div>
-
-    <!-- Multi-view login views container -->
+    <!-- Unified Login View -->
     <div class="login-views-container">
-      
-      <!-- Main Options View -->
       <div id="login-view-main" class="login-view active">
-        <p class="login-desc">Initialize your secure briefings environment. Connect your Google account to enable live Gmail search indexing and report generation.</p>
+        <p class="login-desc">Sign in with your username, email, and password to access the Research Console.</p>
         
-        <button class="login-btn-premium" onclick="startGoogleLogin()">
-          <svg class="google-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.77c-.98.66-2.23 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-          </svg>
-          <span>Sign in with Google</span>
-        </button>
-
-        <div class="login-divider">or</div>
-
-        <div>
-          <button class="guest-btn" onclick="showGuestLogin()">Sign in as Guest (Offline)</button>
+        <!-- Error Alert -->
+        <div id="login-error-alert" class="file-warning" style="margin-bottom: 20px; border-color: #ef4444; background: rgba(239, 68, 68, 0.06); display: none;">
+          <div class="file-warning-title" style="color: #ef4444; font-weight: 700; font-size: 0.8rem; margin-bottom: 6px;">
+            <span>⚠️</span> Sign In Failed
+          </div>
+          <div id="login-error-msg" class="file-warning-desc" style="color: #e4e4e7; font-size: 0.75rem;">
+            Incorrect password.
+          </div>
         </div>
-      </div>
-
-      <!-- Guest Login View -->
-      <div id="login-view-guest" class="login-view">
-        <p class="login-desc" style="margin-bottom: 20px;">Enter a profile name to launch a local, offline briefing workspace.</p>
+        
         <form onsubmit="handleLogin(event)">
-          <div class="input-group">
-            <label class="form-label">Profile Name</label>
+          <div class="input-group" style="margin-bottom: 16px;">
+            <label class="form-label">Username</label>
             <input type="text" id="login-username" class="login-input" placeholder="e.g. Director" required autocomplete="off">
           </div>
-          <button type="submit" class="login-btn-premium">Sign In 🔒</button>
+          <div class="input-group" style="margin-bottom: 16px;">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="login-email" class="login-input" placeholder="e.g. director@company.com" required autocomplete="off">
+          </div>
+          <div class="input-group" style="margin-bottom: 24px;">
+            <label class="form-label">Password</label>
+            <input type="password" id="login-password" class="login-input" placeholder="••••••••" required autocomplete="off">
+          </div>
+          <button type="submit" class="login-btn-premium">Sign In</button>
         </form>
-        
-        <div class="login-footer-text">
-          Want cloud briefing features? <a href="#" class="login-footer-link" onclick="showMainLogin(); return false;">Sign in with Google</a>
-        </div>
       </div>
-
-      <!-- Google Client ID Setup View -->
-      <div id="login-view-clientid" class="login-view">
-        <p class="login-desc" style="margin-bottom: 16px;">Set up a Google OAuth Client ID to connect this console domain to your Gmail account.</p>
-        
-        <div class="setup-steps">
-          <div class="setup-step">
-            <div class="setup-step-num">1</div>
-            <div class="setup-step-text">Generate OAuth credentials on your Google Cloud Console.</div>
-          </div>
-          <div class="setup-step">
-            <div class="setup-step-num">2</div>
-            <div class="setup-step-text">Add <code id="origin-domain-text">http://localhost:8000</code> to your Authorized JavaScript Origins.</div>
-          </div>
-        </div>
-
-        <div class="input-group" style="margin-top: 16px;">
-          <label class="form-label">Google Client ID</label>
-          <input type="text" id="setup-google-client-id" class="login-input" placeholder="xxxxx.apps.googleusercontent.com" autocomplete="off">
-        </div>
-
-        <div class="client-id-actions" style="margin-top: 24px; display: flex; gap: 10px;">
-          <button type="button" class="login-btn-premium secondary" onclick="showMainLogin()">Cancel</button>
-          <button type="button" class="login-btn-premium" onclick="saveGoogleClientId()">Save & Link 🔗</button>
-        </div>
-      </div>
-
     </div>
 
   </div>
@@ -870,14 +825,6 @@
             Deep Think
           </button>
           
-          <button id="gmail-btn" class="prompt-toggle" onclick="toggleGmailScan()">
-            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <polyline points="22,6 12,13 2,6"></polyline>
-            </svg>
-            Gmail Scan
-          </button>
-          
           <button id="incognito-btn" class="prompt-toggle" onclick="toggleIncognito()">
             <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
@@ -935,10 +882,6 @@
           <div class="form-group" style="margin-bottom: 12px;">
             <label>Model Identifier</label>
             <input type="text" id="settings-model" required autocomplete="off">
-          </div>
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label>Google OAuth Client ID</label>
-            <input type="text" id="settings-google-client-id" placeholder="Enter Client ID (optional)" autocomplete="off">
           </div>
           <div class="form-group" style="margin-bottom: 16px;">
             <label>API Bearer Key</label>
@@ -1022,11 +965,11 @@ ACCURACY RULES:
 const defaultSettings = {
   apiUrl: 'https://api.llm7.io/v1/chat/completions',
   model: 'meta-llama/llama-3.3-70b-instruct:free',
-  apiKey: 'unused',
-  googleClientId: ''
+  apiKey: 'unused'
 };
 
 let activeProfile = localStorage.getItem('ankush_active_profile') || null;
+let activeUsername = localStorage.getItem('ankush_active_username') || '';
 
 let settings, characters, activeCharId, activeCharacter, conversations, activeConversationId, activeConversation;
 let deepSearchActive = false;
@@ -1034,201 +977,16 @@ let deepThinkActive = false;
 let incognitoActive = false;
 let incognitoConversation = null;
 
-let googleToken = localStorage.getItem('ankush_google_token') || null;
-let googleTokenExpiry = parseInt(localStorage.getItem('ankush_google_token_expiry')) || 0;
-let googleClientId = localStorage.getItem('ankush_google_client_id') || '';
-let gmailScanActive = false;
-let tokenClient = null;
-let tokenResolver = null;
-
-/* ── Google Authentication & Initialization ── */
-function initGoogleAuth() {
-  const clientId = googleClientId || (settings ? settings.googleClientId : '') || '';
-  if (!clientId || typeof google === 'undefined') return;
-  
-  try {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: 'openid email profile https://www.googleapis.com/auth/gmail.readonly',
-      callback: async (response) => {
-        if (response.error) {
-          console.error('GSI authentication error:', response.error);
-          setStatus('Authentication failed. Please verify your client configurations.', true);
-          setTimeout(() => setStatus('', false), 4000);
-          if (tokenResolver) {
-            tokenResolver(false);
-            tokenResolver = null;
-          }
-          return;
-        }
-        if (response.access_token) {
-          googleToken = response.access_token;
-          googleTokenExpiry = Date.now() + (response.expires_in * 1000);
-          localStorage.setItem('ankush_google_token', googleToken);
-          localStorage.setItem('ankush_google_token_expiry', googleTokenExpiry);
-          
-          setStatus('Retrieving profile information...');
-          const profile = await fetchUserProfile();
-          if (profile) {
-            localStorage.setItem('ankush_active_profile', profile.email);
-            activeProfile = profile.email;
-            localStorage.setItem(`ankush_profile_info_${profile.email}`, JSON.stringify(profile));
-            
-            document.getElementById('login-overlay').style.display = 'none';
-            showMainLogin();
-            document.getElementById('setup-google-client-id').value = '';
-            
-            loadProfileData();
-            
-            const badge = document.getElementById('model-badge');
-            if (badge && settings) badge.textContent = settings.model.split('/').pop().slice(0, 20);
-            
-            initToggles();
-            renderCharacterList();
-            renderHistoryList();
-            applyActiveCharacter(activeCharacter);
-            initChat();
-            
-            setStatus('Briefing workspace initialized.', true);
-            setTimeout(() => setStatus('', false), 2500);
-          }
-          
-          if (tokenResolver) {
-            tokenResolver(true);
-            tokenResolver = null;
-          }
-        }
-      },
-    });
-  } catch (err) {
-    console.error('Error initializing token client:', err);
-  }
-}
-
-function requestGoogleToken() {
-  return new Promise((resolve) => {
-    if (googleToken && Date.now() < googleTokenExpiry) {
-      resolve(true);
-      return;
-    }
-    
-    tokenResolver = resolve;
-    if (!tokenClient) {
-      initGoogleAuth();
-    }
-    
-    if (tokenClient) {
-      tokenClient.requestAccessToken({ prompt: 'consent' });
-    } else {
-      showClientIdSetup();
-      resolve(false);
-    }
-  });
-}
-
-async function fetchUserProfile() {
-  if (!googleToken) return null;
-  try {
-    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { 'Authorization': `Bearer ${googleToken}` }
-    });
-    if (res.ok) {
-      return await res.json();
-    }
-  } catch (err) {
-    console.error('Error fetching userinfo:', err);
-  }
-  return null;
-}
-
-function startGoogleLogin() {
-  if (window.location.protocol === 'file:') {
-    const banner = document.getElementById('file-warning-banner');
-    if (banner) banner.style.display = 'block';
-    return;
-  }
-  
-  if (!googleClientId) {
-    showClientIdSetup();
-    return;
-  }
-  
-  if (!tokenClient) {
-    initGoogleAuth();
-  }
-  
-  if (tokenClient) {
-    tokenClient.requestAccessToken();
-  } else {
-    showClientIdSetup();
-  }
-}
-
-function saveGoogleClientId() {
-  const input = document.getElementById('setup-google-client-id');
-  if (!input) return;
-  const val = input.value.trim();
-  if (!val) return;
-  
-  googleClientId = val;
-  localStorage.setItem('ankush_google_client_id', val);
-  
-  if (settings) {
-    settings.googleClientId = val;
-    localStorage.setItem(`ankush_settings_${activeProfile}`, JSON.stringify(settings));
-  }
-  
-  showMainLogin();
-  initGoogleAuth();
-  
-  setTimeout(() => {
-    if (tokenClient) tokenClient.requestAccessToken();
-  }, 300);
-}
-
-function showGuestLogin() {
-  document.querySelectorAll('.login-view').forEach(el => el.classList.remove('active'));
-  document.getElementById('login-view-guest').classList.add('active');
-}
-
-function showMainLogin() {
-  document.querySelectorAll('.login-view').forEach(el => el.classList.remove('active'));
-  document.getElementById('login-view-main').classList.add('active');
-}
-
-function showClientIdSetup() {
-  document.querySelectorAll('.login-view').forEach(el => el.classList.remove('active'));
-  document.getElementById('login-view-clientid').classList.add('active');
-  
-  const setupInput = document.getElementById('setup-google-client-id');
-  if (setupInput) setupInput.value = googleClientId;
-}
-
 function loadProfileData() {
   if (!activeProfile) return;
   
   const avatarChar = document.getElementById('profile-avatar-char');
   const displayName = document.getElementById('profile-display-name');
   
-  const profileInfoStr = localStorage.getItem(`ankush_profile_info_${activeProfile}`);
-  if (profileInfoStr) {
-    const profile = JSON.parse(profileInfoStr);
-    if (avatarChar) {
-      if (profile.picture) {
-        avatarChar.innerHTML = `<img src="${profile.picture}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
-        avatarChar.style.background = 'none';
-      } else {
-        avatarChar.textContent = profile.name.charAt(0).toUpperCase();
-      }
-    }
-    if (displayName) displayName.textContent = profile.name;
-  } else {
-    if (avatarChar) {
-      avatarChar.textContent = activeProfile.charAt(0).toUpperCase();
-      avatarChar.innerHTML = activeProfile.charAt(0).toUpperCase();
-      avatarChar.style.background = '';
-    }
-    if (displayName) displayName.textContent = activeProfile;
+  if (displayName) displayName.textContent = activeUsername;
+  if (avatarChar) {
+    avatarChar.textContent = activeUsername.charAt(0).toUpperCase();
+    avatarChar.style.background = 'linear-gradient(135deg, #00f2fe, #3866f2)';
   }
   
   settings = JSON.parse(localStorage.getItem(`ankush_settings_${activeProfile}`)) || { ...defaultSettings };
@@ -1265,27 +1023,70 @@ function loadProfileData() {
   
   deepSearchActive = localStorage.getItem(`ankush_deep_search_${activeProfile}`) === 'true';
   deepThinkActive = localStorage.getItem(`ankush_deep_think_${activeProfile}`) === 'true';
-  gmailScanActive = localStorage.getItem(`ankush_gmail_scan_${activeProfile}`) === 'true';
-  
-  if (settings.googleClientId) {
-    googleClientId = settings.googleClientId;
-    localStorage.setItem('ankush_google_client_id', googleClientId);
+}
+
+function showLoginError(msg) {
+  const alertEl = document.getElementById('login-error-alert');
+  const msgEl = document.getElementById('login-error-msg');
+  if (alertEl && msgEl) {
+    msgEl.textContent = msg;
+    alertEl.style.display = 'block';
   }
+}
+
+function clearLoginError() {
+  const alertEl = document.getElementById('login-error-alert');
+  if (alertEl) alertEl.style.display = 'none';
 }
 
 /* ── Login/Logout Handlers ── */
 function handleLogin(e) {
   e.preventDefault();
-  const usernameInput = document.getElementById('login-username');
-  if (!usernameInput) return;
-  const username = usernameInput.value.trim();
-  if (!username) return;
+  clearLoginError();
   
-  localStorage.setItem('ankush_active_profile', username);
-  activeProfile = username;
+  const usernameInput = document.getElementById('login-username');
+  const emailInput = document.getElementById('login-email');
+  const passwordInput = document.getElementById('login-password');
+  if (!usernameInput || !emailInput || !passwordInput) return;
+  const username = usernameInput.value.trim();
+  const email = emailInput.value.trim().toLowerCase();
+  const password = passwordInput.value;
+  if (!username || !email || !password) return;
+  
+  // Local Storage Account Authenticator
+  let userDb = [];
+  try {
+    userDb = JSON.parse(localStorage.getItem('ankush_user_db')) || [];
+  } catch (err) {
+    userDb = [];
+  }
+  
+  const existingUser = userDb.find(u => u.email === email);
+  if (existingUser) {
+    if (existingUser.password !== password) {
+      showLoginError('Incorrect password for this email address.');
+      return;
+    }
+    // Update username if they decided to sign in with a different display name
+    if (existingUser.username !== username) {
+      existingUser.username = username;
+      localStorage.setItem('ankush_user_db', JSON.stringify(userDb));
+    }
+  } else {
+    // Register new user on the fly
+    userDb.push({ username, email, password });
+    localStorage.setItem('ankush_user_db', JSON.stringify(userDb));
+  }
+  
+  localStorage.setItem('ankush_active_profile', email);
+  localStorage.setItem('ankush_active_username', username);
+  activeProfile = email;
+  activeUsername = username;
   
   document.getElementById('login-overlay').style.display = 'none';
   usernameInput.value = '';
+  emailInput.value = '';
+  passwordInput.value = '';
   
   loadProfileData();
   
@@ -1304,16 +1105,11 @@ function handleLogout() {
     toggleIncognito();
   }
   localStorage.removeItem('ankush_active_profile');
+  localStorage.removeItem('ankush_active_username');
   activeProfile = null;
-  
-  googleToken = null;
-  googleTokenExpiry = 0;
-  localStorage.removeItem('ankush_google_token');
-  localStorage.removeItem('ankush_google_token_expiry');
-  gmailScanActive = false;
+  activeUsername = '';
   
   document.getElementById('login-overlay').style.display = 'flex';
-  showMainLogin();
   
   document.getElementById('sidebar-history-list').innerHTML = '';
   document.getElementById('sidebar-character-list').innerHTML = '';
@@ -1321,9 +1117,6 @@ function handleLogout() {
   document.getElementById('profile-avatar-char').textContent = 'G';
   document.getElementById('profile-avatar-char').style.background = '';
   document.getElementById('profile-display-name').textContent = 'Guest';
-  
-  const gmailBtn = document.getElementById('gmail-btn');
-  if (gmailBtn) gmailBtn.classList.remove('active');
 }
 
 /* ── Modals logic ── */
@@ -1334,7 +1127,6 @@ function openModal(id) {
     if (id === 'settings-modal' && settings) {
       document.getElementById('settings-api-url').value = settings.apiUrl;
       document.getElementById('settings-model').value = settings.model;
-      document.getElementById('settings-google-client-id').value = settings.googleClientId || googleClientId || '';
       document.getElementById('settings-api-key').value = settings.apiKey === 'unused' ? '' : settings.apiKey;
     }
   }
@@ -1357,17 +1149,12 @@ function saveSettings(e) {
   if (!settings) return;
   settings.apiUrl = document.getElementById('settings-api-url').value.trim();
   settings.model = document.getElementById('settings-model').value.trim();
-  settings.googleClientId = document.getElementById('settings-google-client-id').value.trim();
   const key = document.getElementById('settings-api-key').value.trim();
   settings.apiKey = key || 'unused';
-  
-  googleClientId = settings.googleClientId;
-  localStorage.setItem('ankush_google_client_id', googleClientId);
   
   localStorage.setItem(`ankush_settings_${activeProfile}`, JSON.stringify(settings));
   document.getElementById('model-badge').textContent = settings.model.split('/').pop().slice(0, 20);
   
-  initGoogleAuth();
   closeModal('settings-modal');
 }
 
@@ -1596,13 +1383,11 @@ function initToggles() {
   const searchBtn = document.getElementById('deep-search-btn');
   const thinkBtn = document.getElementById('deep-think-btn');
   const incognitoBtn = document.getElementById('incognito-btn');
-  const gmailBtn = document.getElementById('gmail-btn');
   const mainContent = document.getElementById('main-content');
   
   if (searchBtn) searchBtn.classList.toggle('active', deepSearchActive);
   if (thinkBtn) thinkBtn.classList.toggle('active', deepThinkActive);
   if (incognitoBtn) incognitoBtn.classList.toggle('active', incognitoActive);
-  if (gmailBtn) gmailBtn.classList.toggle('active', gmailScanActive);
   if (mainContent) mainContent.classList.toggle('incognito', incognitoActive);
 }
 
@@ -1645,40 +1430,7 @@ function toggleIncognito() {
   initChat();
 }
 
-function toggleGmailScan() {
-  if (incognitoActive) {
-    setStatus('Gmail integration is disabled in Incognito mode.', true);
-    setTimeout(() => setStatus('', false), 3000);
-    return;
-  }
-  if (!googleToken || Date.now() >= googleTokenExpiry) {
-    setStatus('Authorizing Gmail read scopes...');
-    requestGoogleToken().then(success => {
-      if (success) {
-        gmailScanActive = !gmailScanActive;
-        localStorage.setItem(`ankush_gmail_scan_${activeProfile}`, gmailScanActive);
-        updateGmailScanBtnState();
-        setStatus('Gmail link established.', true);
-        setTimeout(() => setStatus('', false), 2000);
-      } else {
-        setStatus('Gmail authorization failed/canceled.', true);
-        setTimeout(() => setStatus('', false), 3000);
-      }
-    });
-    return;
-  }
-  
-  gmailScanActive = !gmailScanActive;
-  localStorage.setItem(`ankush_gmail_scan_${activeProfile}`, gmailScanActive);
-  updateGmailScanBtnState();
-}
-
-function updateGmailScanBtnState() {
-  const btn = document.getElementById('gmail-btn');
-  if (btn) {
-    btn.classList.toggle('active', gmailScanActive);
-  }
-}
+// Gmail integrations removed
 
 /* ── Sidebar Toggler (Mobile) ── */
 function toggleSidebar() {
@@ -1821,71 +1573,6 @@ function setStatus(msg, show = true) {
   statBar.style.display = show ? 'block' : 'none';
 }
 
-/* ── Gmail API Integration ── */
-async function fetchGmailMessages(query, maxResults = 8) {
-  if (!googleToken || Date.now() >= googleTokenExpiry) {
-    const authorized = await requestGoogleToken();
-    if (!authorized) return [];
-  }
-  
-  try {
-    let url = `https://gmail.googleapis.com/v1/users/me/messages?maxResults=${maxResults}`;
-    const cleanQuery = query ? query.replace(/[^\w\s@]/g, '').trim() : '';
-    if (cleanQuery) {
-      url += `&q=${encodeURIComponent(cleanQuery)}`;
-    }
-    
-    const res = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${googleToken}` }
-    });
-    
-    if (!res.ok) {
-      if (res.status === 401) {
-        const authorized = await requestGoogleToken();
-        if (authorized) {
-          return fetchGmailMessages(query, maxResults);
-        }
-      }
-      return [];
-    }
-    
-    const data = await res.json();
-    if (!data.messages) return [];
-    
-    const messagePromises = data.messages.map(async (msg) => {
-      try {
-        const detailRes = await fetch(`https://gmail.googleapis.com/v1/users/me/messages/${msg.id}?format=full`, {
-          headers: { 'Authorization': `Bearer ${googleToken}` }
-        });
-        if (!detailRes.ok) return null;
-        const msgData = await detailRes.json();
-        
-        const headers = msgData.payload.headers;
-        const fromHeader = headers.find(h => h.name.toLowerCase() === 'from')?.value || 'Unknown';
-        const subjectHeader = headers.find(h => h.name.toLowerCase() === 'subject')?.value || '(No Subject)';
-        const dateHeader = headers.find(h => h.name.toLowerCase() === 'date')?.value || '';
-        
-        return {
-          id: msg.id,
-          from: fromHeader,
-          subject: subjectHeader,
-          date: dateHeader,
-          snippet: msgData.snippet || ''
-        };
-      } catch (err) {
-        console.error('Error fetching message details:', err);
-        return null;
-      }
-    });
-    
-    const details = await Promise.all(messagePromises);
-    return details.filter(d => d !== null);
-  } catch (err) {
-    console.error('Gmail Scan Error:', err);
-    return [];
-  }
-}
-
 function showResearchCard() {
   removeResearchCard();
   const progressDiv = document.createElement('div');
@@ -1893,19 +1580,9 @@ function showResearchCard() {
   progressDiv.className = 'progress-card';
   progressDiv.style.margin = '10px auto';
   
-  let gmailStepHTML = '';
-  if (gmailScanActive) {
-    gmailStepHTML = `
-      <div class="progress-step" id="step-gmail">
-        <span class="step-icon">⬡</span> <span class="step-text">Gmail Inbox scan</span>
-      </div>
-    `;
-  }
-  
   progressDiv.innerHTML = `
     <div class="progress-hdr">Scanning Briefing Databases</div>
     <div class="progress-steps">
-      ${gmailStepHTML}
       <div class="progress-step" id="step-ddg">
         <span class="step-icon">⬡</span> <span class="step-text">DuckDuckGo Web Search</span>
       </div>
@@ -1948,9 +1625,6 @@ function removeResearchCard() {
 async function gatherIntel(query) {
   showResearchCard();
   
-  if (gmailScanActive) {
-    updateResearchStep('gmail', 'Gmail Inbox scan', 'running');
-  }
   if (deepSearchActive) {
     updateResearchStep('ddg', 'DuckDuckGo Web Search', 'running');
     updateResearchStep('rss', 'RSS News Feeds', 'running');
@@ -1958,15 +1632,6 @@ async function gatherIntel(query) {
   }
   
   const promises = [];
-  
-  let pGmail = Promise.resolve([]);
-  if (gmailScanActive) {
-    pGmail = fetchGmailMessages(query).then(res => {
-      updateResearchStep('gmail', res.length > 0 ? `Gmail Scan: Found ${res.length} matching emails` : 'Gmail Scan: No matching emails found', 'done');
-      return res;
-    });
-    promises.push(pGmail);
-  }
   
   let pDdg = Promise.resolve([]);
   if (deepSearchActive) {
@@ -1997,7 +1662,6 @@ async function gatherIntel(query) {
   
   await Promise.all(promises);
   
-  const gmailItems = await pGmail;
   const ddgItems = await pDdg;
   const rssItems = await pRss;
   const wiki = await pWiki;
@@ -2007,15 +1671,6 @@ async function gatherIntel(query) {
 
   const allSources = [];
   let contextBlock = '';
-
-  if (gmailScanActive && gmailItems.length) {
-    contextBlock += 'GMAIL INBOX CONTEXT:\n';
-    gmailItems.forEach((msg) => {
-      allSources.push({ title: `Email: ${msg.subject}`, url: `https://mail.google.com/mail/u/0/#inbox/${msg.id}`, source: `Gmail (${msg.from})` });
-      contextBlock += `[${allSources.length}] From: ${msg.from} | Date: ${msg.date} | Subject: ${msg.subject}\nContent Snippet: ${msg.snippet}\n\n`;
-    });
-    contextBlock += '\n';
-  }
 
   if (deepSearchActive) {
     if (rssItems.length) {
@@ -2247,8 +1902,8 @@ async function sendMsg() {
   let contextBlock = null;
   let sources = [];
 
-  // If Deep Search or Gmail Scan is active, compile search info
-  if (deepSearchActive || gmailScanActive) {
+  // If Deep Search is active, compile search info
+  if (deepSearchActive) {
     const intel = await gatherIntel(text);
     contextBlock = intel.contextBlock;
     sources = intel.sources;
@@ -2398,12 +2053,7 @@ function clearChat() {
 }
 
 /* ── Initialization ── */
-if (window.location.protocol === 'file:') {
-  const banner = document.getElementById('file-warning-banner');
-  if (banner) banner.style.display = 'block';
-}
-
-if (activeProfile) {
+if (activeProfile && activeUsername) {
   document.getElementById('login-overlay').style.display = 'none';
   loadProfileData();
   const badge = document.getElementById('model-badge');
@@ -2413,10 +2063,8 @@ if (activeProfile) {
   renderHistoryList();
   applyActiveCharacter(activeCharacter);
   initChat();
-  initGoogleAuth();
 } else {
   document.getElementById('login-overlay').style.display = 'flex';
-  initGoogleAuth();
 }
 
 
