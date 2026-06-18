@@ -1,0 +1,2434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Ankush — Intelligence Console</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 200 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='glow-heavy' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='5' result='coloredBlur'/%3E%3CfeMerge%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='coloredBlur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80' fill='none' stroke='%2300e5ff' stroke-width='5' stroke-linecap='round' filter='url(%23glow-heavy)'/%3E%3Cpath d='M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80' fill='none' stroke='%2300e5ff' stroke-width='4' stroke-linecap='round' filter='url(%23glow-heavy)'/%3E%3Cpath d='M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80' fill='none' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='122' cy='22' r='5' fill='%2300e5ff' filter='url(%23glow-heavy)'/%3E%3Ccircle cx='122' cy='22' r='2.5' fill='%23ffffff'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --bg-app:     #ffffff; /* Main chat background */
+    --bg-side:    #18181c; /* Dark sidebar background */
+    --bg-chat:    #f9fafb; /* Message stream area */
+    --bg-bubble:  #f4f4f5; /* User message bubble */
+    --border:     #e4e4e7; /* Soft gray border */
+    --border-side:#2d2d34;
+    --accent:     #3866f2; /* DeepSeek clean blue */
+    --accent-hover:#2b53cb;
+    --accent-dim: rgba(56, 102, 242, 0.06);
+    --green:      #10a37f;
+    --text:       #18181b; /* Dark charcoal text */
+    --text-side:  #e4e4e7;
+    --text-dim:   #71717a; /* Muted gray text */
+    --text-muted: #a1a1aa;
+    --sans:       'Inter', -apple-system, system-ui, sans-serif;
+    --mono:       'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; width: 100%; font-family: var(--sans); background: var(--bg-chat); overflow: hidden; }
+
+  #app-container {
+    display: flex;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: 260px; height: 100%;
+    background: var(--bg-side);
+    border-right: 1px solid var(--border-side);
+    display: flex; flex-direction: column;
+    padding: 16px; flex-shrink: 0;
+    z-index: 50; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #sidebar-hdr {
+    display: flex; align-items: baseline; gap: 6px;
+    margin-bottom: 20px; padding: 0 4px;
+  }
+  .logo-text {
+    font-size: 1.15rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;
+  }
+  .logo-sub {
+    font-size: 0.65rem; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .new-chat-btn {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--accent); color: #ffffff; border: none; border-radius: 8px;
+    padding: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    transition: background-color 0.2s; margin-bottom: 20px;
+  }
+  .new-chat-btn:hover { background: var(--accent-hover); }
+  .new-chat-btn svg { width: 16px; height: 16px; }
+
+  .sidebar-section {
+    flex: 1; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .section-title {
+    font-size: 0.65rem; font-weight: 600; color: #71717a; text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 10px; padding-left: 4px;
+  }
+  #sidebar-character-list {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+    padding-right: 2px; margin-bottom: 12px;
+  }
+  #sidebar-character-list::-webkit-scrollbar { width: 4px; }
+  #sidebar-character-list::-webkit-scrollbar-thumb { background: #2d2d34; border-radius: 2px; }
+
+  .char-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 6px; cursor: pointer;
+    color: #a1a1aa; transition: all 0.2s; border: 1px solid transparent;
+  }
+  .char-item:hover { background: rgba(255, 255, 255, 0.04); color: #ffffff; }
+  .char-item.active { background: rgba(56, 102, 242, 0.15); color: #ffffff; border-color: rgba(56, 102, 242, 0.3); }
+  .char-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+  .char-name { font-size: 0.85rem; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+  .char-subtitle { font-size: 0.7rem; color: #71717a; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+  .char-actions { display: flex; gap: 4px; }
+  .char-btn {
+    background: none; border: none; color: #52525b; font-size: 0.75rem; cursor: pointer;
+    padding: 2px 4px; border-radius: 4px; transition: all 0.15s;
+  }
+  .char-btn:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+  .add-char-btn {
+    background: none; border: 1px dashed var(--border-side); color: #71717a;
+    padding: 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 500;
+    cursor: pointer; text-align: center; transition: all 0.2s;
+  }
+  .add-char-btn:hover { border-color: var(--accent); color: #ffffff; }
+
+  #sidebar-footer {
+    padding-top: 12px; border-top: 1px solid var(--border-side); margin-top: 12px;
+  }
+  .footer-btn {
+    width: 100%; display: flex; align-items: center; gap: 8px;
+    background: none; border: none; color: #a1a1aa; border-radius: 6px;
+    padding: 10px; font-size: 0.8rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .footer-btn:hover { color: #ffffff; background: rgba(255, 255, 255, 0.04); }
+  .footer-btn svg { width: 14px; height: 14px; }
+
+  /* ── Main Workspace ── */
+  #main-content {
+    flex: 1; height: 100%; display: flex; flex-direction: column; background: var(--bg-app);
+    position: relative;
+  }
+
+  /* ── Header ── */
+  #hdr {
+    height: 56px; border-bottom: 1px solid var(--border); background: var(--bg-app);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+    flex-shrink: 0;
+  }
+  #hdr-left { display: flex; align-items: center; gap: 12px; }
+  #sidebar-toggle {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    padding: 4px; border-radius: 4px; display: none; /* Mobile only toggler */
+  }
+  #sidebar-toggle:hover { color: var(--text); background: var(--bg-bubble); }
+  #sidebar-toggle svg { width: 20px; height: 20px; }
+  .active-persona-name { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+  .model-badge {
+    font-size: 0.7rem; font-family: var(--mono); color: var(--text-dim);
+    background: var(--bg-bubble); border: 1px solid var(--border);
+    padding: 3px 8px; border-radius: 12px; font-weight: 500;
+  }
+
+  /* ── Status Bar ── */
+  #status-bar {
+    display: none; font-size: 0.75rem; text-align: center; padding: 6px;
+    background: var(--accent-dim); color: var(--accent); border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Messages Container ── */
+  #msgs {
+    flex: 1; overflow-y: auto; padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 24px;
+    scroll-behavior: smooth; background: var(--bg-app);
+  }
+  #msgs::-webkit-scrollbar { width: 6px; }
+  #msgs::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
+
+  /* ── Date/System Chips ── */
+  .chip {
+    text-align: center; font-family: var(--mono); font-size: .62rem;
+    color: var(--text-dim); letter-spacing: .08em; text-transform: uppercase;
+    margin: 8px 0; display: flex; align-items: center; gap: 10px;
+  }
+  .chip::before, .chip::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── Chat Message Rows ── */
+  .row { display: flex; gap: 16px; max-width: 760px; width: 100%; margin: 0 auto; }
+  .row.aria { align-items: flex-start; }
+  .row.boss { align-items: flex-end; justify-content: flex-end; }
+
+  .mini-av {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--accent-dim);
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .mini-av svg { width: 18px; height: 18px; }
+
+  .bub-wrap { display: flex; flex-direction: column; max-width: 85%; }
+  .row.aria .bub-wrap { align-items: flex-start; }
+  .row.boss .bub-wrap { align-items: flex-end; }
+
+  .sender {
+    font-size: 0.65rem; font-weight: 600; color: var(--text-dim);
+    margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .bub {
+    padding: 12px 16px; border-radius: 12px; font-size: 0.92rem; line-height: 1.65;
+    word-break: break-word;
+  }
+  .bub.aria {
+    background: transparent; color: var(--text); padding-left: 0; padding-right: 0;
+  }
+  .bub.boss {
+    background: var(--bg-bubble); color: var(--text); border-top-right-radius: 2px;
+  }
+
+  /* ── Sources / Citation Footnotes ── */
+  .sources {
+    margin-top: 12px; padding: 12px 14px; background: var(--bg-chat);
+    border: 1px solid var(--border); border-radius: 8px; width: 100%;
+  }
+  .sources-label {
+    font-size: 0.65rem; font-weight: 700; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+  }
+  .source-item { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; }
+  .src-num { font-family: var(--mono); font-size: 0.7rem; color: var(--accent); font-weight: bold; flex-shrink: 0; }
+  .src-link {
+    font-family: var(--sans); font-size: 0.78rem; color: var(--accent); text-decoration: none;
+    word-break: break-word; transition: color 0.15s;
+  }
+  .src-link:hover { text-decoration: underline; color: var(--accent-hover); }
+  .src-title { font-size: 0.75rem; color: var(--text-dim); margin-top: 1px; }
+
+  /* ── Superscript Citation ── */
+  .citation-sup {
+    color: var(--accent); font-weight: bold; font-family: var(--mono);
+    font-size: 0.65rem; vertical-align: super; line-height: 0; margin-left: 2px;
+  }
+
+  /* ── Markdown Headers & Formatting inside Assistant Text ── */
+  .section-hdr {
+    font-size: 0.85rem; font-weight: 700; color: var(--accent);
+    margin-top: 16px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em;
+    display: inline-block; padding: 2px 0; border-bottom: 1.5px solid var(--accent);
+  }
+  .bub.aria p { margin-bottom: 12px; }
+  .bub.aria p:last-child { margin-bottom: 0; }
+  
+  .article-bullet { display: flex; gap: 8px; margin: 6px 0; padding-left: 4px; }
+  .bullet-marker { color: var(--accent); font-weight: bold; }
+  .bullet-content { flex: 1; }
+  
+  .article-num-list { display: flex; gap: 8px; margin: 6px 0; padding-left: 4px; }
+  .num-marker { color: var(--accent); font-family: var(--mono); font-weight: bold; min-width: 16px; }
+  .num-content { flex: 1; }
+
+  .ts { font-size: 0.62rem; color: var(--text-muted); margin-top: 6px; }
+
+  /* ── Loading and Progress Cards ── */
+  .progress-card {
+    background: var(--bg-chat); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; width: 100%; max-width: 440px; margin-top: 6px;
+  }
+  .progress-hdr {
+    font-size: 0.68rem; font-weight: 700; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+  }
+  .progress-steps { display: flex; flex-direction: column; gap: 6px; }
+  .progress-step { font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+  .progress-step.running { color: var(--text); }
+  .progress-step.done { color: var(--green); }
+  .progress-step.running .step-icon {
+    display: inline-block; animation: spin 1.5s linear infinite; color: var(--accent);
+  }
+
+  /* ── Typing Dots ── */
+  .typing-dots { display: flex; gap: 5px; padding: 6px 2px; }
+  .typing-dots span {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    opacity: 0.3; animation: tdot 0.9s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.18s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.36s; }
+  @keyframes tdot { 0%,80%,100%{transform:scale(.6);opacity(.2)} 40%{transform:scale(1);opacity:.9} }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  /* ── Capsule Bottom Chat Input ── */
+  #bottom {
+    padding: 12px 20px 24px; background: var(--bg-app); flex-shrink: 0;
+  }
+  #prompt-container {
+    max-width: 760px; width: 100%; margin: 0 auto;
+    border: 1.5px solid var(--border); border-radius: 18px;
+    background: var(--bg-app); box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    padding: 12px 14px 10px; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #prompt-container:focus-within {
+    border-color: var(--accent); box-shadow: 0 4px 24px rgba(56, 102, 242, 0.06);
+  }
+  #input-wrap { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 8px; }
+  #inp {
+    flex: 1; background: none; border: none; outline: none; resize: none;
+    font-family: var(--sans); font-size: 0.92rem; color: var(--text);
+    line-height: 1.5; max-height: 120px; caret-color: var(--accent);
+  }
+  #inp::placeholder { color: var(--text-muted); }
+  
+  #send {
+    width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--accent); color: #ffffff; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  #send:disabled { opacity: 0.3; cursor: default; }
+  #send:not(:disabled):active { transform: scale(0.92); }
+  #send svg { width: 14px; height: 14px; transform: translate(1px, -0.5px); }
+
+  #prompt-controls { display: flex; gap: 8px; }
+  .prompt-toggle {
+    display: flex; align-items: center; gap: 5px;
+    background: none; border: 1px solid var(--border); border-radius: 14px;
+    padding: 5px 12px; font-size: 0.72rem; font-weight: 600; color: var(--text-dim);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .prompt-toggle:hover { color: var(--text); border-color: var(--text-muted); }
+  .prompt-toggle.active {
+    background: var(--accent-dim); color: var(--accent); border-color: var(--accent);
+  }
+  .toggle-icon { width: 12px; height: 12px; }
+
+  #input-hint { font-size: 0.65rem; color: var(--text-muted); text-align: center; margin-top: 8px; }
+
+  /* ── Modals & Configurations ── */
+  .modal-overlay {
+    position: absolute; inset: 0; z-index: 100;
+    background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-content {
+    background: var(--bg-app); border: 1px solid var(--border); border-radius: 12px;
+    width: 100%; max-width: 440px; max-height: 90%; display: flex; flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1); animation: scale-up 0.2s ease both;
+  }
+  .modal-hdr {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.95rem; font-weight: 700; color: var(--text);
+  }
+  .modal-close { background: none; border: none; color: var(--text-dim); font-size: 1.25rem; cursor: pointer; line-height: 1; }
+  .modal-close:hover { color: var(--text); }
+  
+  .modal-body { padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+  
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 0.72rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; }
+  
+  .modal-body input, .modal-body textarea {
+    background: var(--bg-chat); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 8px 10px; font-family: var(--sans); font-size: 0.85rem;
+    outline: none; transition: all 0.2s;
+  }
+  .modal-body input:focus, .modal-body textarea:focus { border-color: var(--accent); background: var(--bg-app); }
+  
+  .primary-btn {
+    background: var(--accent); color: #ffffff; border: none; border-radius: 6px;
+    padding: 10px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+  }
+  .primary-btn:hover { opacity: 0.95; }
+  
+  .info-note {
+    background: var(--accent-dim); border-left: 2px solid var(--accent);
+    padding: 8px 10px; border-radius: 6px; font-size: 0.75rem; line-height: 1.45; color: var(--text-dim);
+  }
+
+  /* ── Chat History Sidebar Section ── */
+  .history-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 6px; cursor: pointer;
+    color: #a1a1aa; transition: all 0.2s; border: 1px solid transparent;
+    font-size: 0.8rem;
+  }
+  .history-item:hover { background: rgba(255, 255, 255, 0.04); color: #ffffff; }
+  .history-item.active { background: rgba(56, 102, 242, 0.12); color: #ffffff; border-color: rgba(56, 102, 242, 0.2); }
+  .history-title { flex: 1; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-weight: 500; }
+  .history-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+  .history-item:hover .history-actions { opacity: 1; }
+  .history-btn {
+    background: none; border: none; color: #52525b; font-size: 0.75rem; cursor: pointer;
+    padding: 2px; border-radius: 4px; transition: all 0.15s;
+  }
+  .history-btn:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+  /* ── Responsive Sidebar Collapsing ── */
+  @media (max-width: 768px) {
+    #sidebar {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      transform: translateX(-100%);
+    }
+    #sidebar.open { transform: translateX(0); }
+    #sidebar-toggle { display: block; }
+  }
+
+  /* ── Google Sign In Premium Overlay ── */
+  #login-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: #09090b; display: flex; align-items: center; justify-content: center;
+    padding: 20px; font-family: var(--sans); overflow: hidden;
+  }
+  
+  /* Glowing background blobs */
+  .glow-sphere {
+    position: absolute; border-radius: 50%; filter: blur(150px); opacity: 0.08; z-index: 1; pointer-events: none;
+  }
+  .glow-sphere-1 {
+    width: 400px; height: 400px; background: var(--accent); top: -100px; left: -100px;
+    animation: float-glow-1 12s ease-in-out infinite alternate;
+  }
+  .glow-sphere-2 {
+    width: 350px; height: 350px; background: #00e5ff; bottom: -80px; right: -80px;
+    animation: float-glow-2 15s ease-in-out infinite alternate;
+  }
+  .grid-overlay {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+    background-size: 28px 28px; z-index: 2; pointer-events: none;
+  }
+
+  @keyframes float-glow-1 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(40px, 60px) scale(1.1); }
+  }
+  @keyframes float-glow-2 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-50px, -40px) scale(1.15); }
+  }
+
+  .login-card {
+    background: #121214; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 28px;
+    width: 100%; max-width: 400px; padding: 40px 32px; text-align: center;
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.7); z-index: 10;
+    animation: card-appear 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes card-appear {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .login-header {
+    display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px;
+  }
+  .login-icon-box {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #00f2fe, #3866f2);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0, 242, 254, 0.35); flex-shrink: 0;
+  }
+  .login-icon-box svg { width: 26px; height: 13px; }
+  .login-title { font-size: 1.45rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; }
+  .login-subtitle { font-size: 0.8rem; color: #8a8a93; margin-bottom: 28px; line-height: 1.45; }
+
+  /* ── Form Styling ── */
+  .input-group { margin-bottom: 20px; text-align: left; }
+  .form-label {
+    text-transform: uppercase; font-size: 0.65rem; font-weight: 700; color: #a1a1aa;
+    letter-spacing: 0.08em; margin-bottom: 8px; display: block;
+  }
+  .login-input {
+    width: 100%; background: #18181b; border: 1.5px solid #27272a; color: #ffffff;
+    border-radius: 10px; padding: 13px 16px; font-size: 0.9rem; outline: none;
+    transition: all 0.2s ease; font-family: var(--sans);
+  }
+  .login-input::placeholder { color: #52525b; }
+  .login-input:focus {
+    border-color: #00f2fe; background: #18181b;
+    box-shadow: 0 0 12px rgba(0, 242, 254, 0.15);
+  }
+
+  /* ── Premium Buttons ── */
+  .login-btn-premium {
+    width: 100%; background: linear-gradient(135deg, #00f2fe, #3866f2); color: #ffffff;
+    border: none; border-radius: 10px; padding: 14px; font-size: 0.92rem; font-weight: 700;
+    cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 20px rgba(0, 242, 254, 0.25);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .login-btn-premium:hover {
+    transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0, 242, 254, 0.45);
+  }
+  .login-btn-premium:active { transform: translateY(0); }
+  
+  .login-btn-premium.secondary {
+    background: transparent; color: #a1a1aa; border: 1.5px solid #27272a; box-shadow: none;
+  }
+  .login-btn-premium.secondary:hover {
+    background: rgba(255, 255, 255, 0.03); border-color: #a1a1aa; color: #ffffff;
+    transform: translateY(-2px);
+  }
+
+  /* ── Localhost warning premium ── */
+  .file-warning {
+    background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 12px; padding: 14px; margin-bottom: 24px; text-align: left; display: none;
+  }
+  .file-warning-title { color: #f59e0b; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .file-warning-desc { color: #a1a1aa; font-size: 0.72rem; line-height: 1.5; }
+
+  /* ── Setup Steps ── */
+  .setup-steps { display: flex; flex-direction: column; gap: 10px; text-align: left; margin-bottom: 12px; }
+  .setup-step { display: flex; gap: 12px; align-items: flex-start; }
+  .setup-step-num {
+    background: rgba(56, 102, 242, 0.15); color: var(--accent); width: 20px; height: 20px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: bold; flex-shrink: 0; margin-top: 1px;
+  }
+  .setup-step-text { color: #d4d4d8; font-size: 0.78rem; line-height: 1.4; }
+
+  /* ── Login views controller ── */
+  .login-views-container { position: relative; }
+  .login-view { display: none; }
+  .login-view.active { display: block; animation: view-slide 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes view-slide {
+    0% { opacity: 0; transform: scale(0.96); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* ── Footer Link styling ── */
+  .login-footer-text { font-size: 0.8rem; color: #71717a; margin-top: 24px; }
+  .login-footer-link { color: #00f2fe; text-decoration: none; font-weight: 600; transition: color 0.15s; }
+  .login-footer-link:hover { color: #3866f2; text-decoration: underline; }
+
+  /* ── Profile Footer Bar ── */
+  .profile-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 4px 0; border-top: 1px solid var(--border-side); margin-top: 12px;
+    font-size: 0.75rem; color: #a1a1aa;
+  }
+  .profile-info { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .profile-avatar {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--accent);
+    color: #ffffff; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.7rem; text-transform: uppercase; flex-shrink: 0;
+  }
+  .profile-name { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-weight: 600; color: #e4e4e7; }
+  .logout-btn {
+    background: none; border: none; color: #71717a; cursor: pointer; font-size: 0.72rem; font-weight: 500;
+    transition: color 0.15s; padding: 2px 6px; border-radius: 4px;
+  }
+  .logout-btn:hover { color: #ef4444; background: rgba(239, 68, 68, 0.08); }
+
+  /* ── Incognito Theme Override ── */
+  #main-content.incognito {
+    background: #09090b !important;
+  }
+  #main-content.incognito #hdr {
+    background: #09090b !important; border-bottom-color: #1f1f23 !important;
+  }
+  #main-content.incognito #hdr .active-persona-name {
+    color: #e4e4e7 !important;
+  }
+  #main-content.incognito #hdr .model-badge {
+    background: #141417 !important; border-color: #1f1f23 !important; color: #a1a1aa !important;
+  }
+  #main-content.incognito #msgs {
+    background: #09090b !important;
+  }
+  #main-content.incognito #msgs::-webkit-scrollbar-thumb {
+    background: #27272a !important;
+  }
+  #main-content.incognito .bub.boss {
+    background: #18181b !important; color: #e4e4e7 !important;
+  }
+  #main-content.incognito .bub.aria {
+    color: #f4f4f5 !important;
+  }
+  #main-content.incognito .sender {
+    color: #71717a !important;
+  }
+  #main-content.incognito .chip {
+    color: #71717a !important;
+  }
+  #main-content.incognito .chip::before, #main-content.incognito .chip::after {
+    background: #1f1f23 !important;
+  }
+  #main-content.incognito #bottom {
+    background: #09090b !important;
+  }
+  #main-content.incognito #prompt-container {
+    background: #09090b !important; border-color: #1f1f23 !important;
+  }
+  #main-content.incognito #prompt-container:focus-within {
+    border-color: #ef4444 !important;
+    box-shadow: 0 4px 24px rgba(239, 68, 68, 0.08) !important;
+  }
+  #main-content.incognito #inp {
+    color: #f4f4f5 !important;
+  }
+  #main-content.incognito .sources {
+    background: #131316 !important; border-color: #1f1f23 !important;
+  }
+  #main-content.incognito .src-title {
+    color: #71717a !important;
+  }
+  #main-content.incognito .progress-card {
+    background: #131316 !important; border-color: #1f1f23 !important;
+  }
+  #main-content.incognito .progress-step {
+    color: #a1a1aa !important;
+  }
+  #main-content.incognito .progress-step.running {
+    color: #e4e4e7 !important;
+  }
+  #main-content.incognito #deep-search-btn.active, 
+  #main-content.incognito #deep-think-btn.active {
+    background: rgba(239, 68, 68, 0.08) !important;
+    color: #ef4444 !important;
+    border-color: #ef4444 !important;
+  }
+  #main-content.incognito #incognito-btn.active {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #ef4444 !important;
+    border-color: #ef4444 !important;
+  }
+  #main-content.incognito #send {
+    background: #ef4444 !important;
+  }
+</style>
+</head>
+<body>
+
+<div id="login-overlay" style="display: none;">
+  <!-- Ambient Background glows -->
+  <div class="glow-sphere glow-sphere-1"></div>
+  <div class="glow-sphere glow-sphere-2"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="login-card">
+    
+    <!-- Header: Icon & Title in single row (inspired by NutriTrack) -->
+    <div class="login-header">
+      <div class="login-icon-box">
+        <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80" 
+                fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+          <path d="M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80" 
+                fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="122" cy="22" r="10" fill="#ffffff"/>
+        </svg>
+      </div>
+      <div class="login-title">ANKUSH</div>
+    </div>
+    <div id="login-subtitle-txt" class="login-subtitle">Intelligence Research Console</div>
+    
+    <!-- File Protocol Warning -->
+    <div id="file-warning-banner" class="file-warning">
+      <div class="file-warning-title">
+        <span>⚠️</span> Local File System Detected
+      </div>
+      <div class="file-warning-desc">
+        Google OAuth does not support direct <code>file://</code> launch. Please serve this app locally by double-clicking the <code>run.bat</code> file.
+      </div>
+    </div>
+
+    <!-- Multi-view login views container -->
+    <div class="login-views-container">
+      
+      <!-- Main Options View -->
+      <div id="login-view-main" class="login-view active">
+        <p class="login-desc">Initialize your secure briefings environment. Connect your Google account to enable live Gmail search indexing and report generation.</p>
+        
+        <button class="login-btn-premium" onclick="startGoogleLogin()">
+          <svg class="google-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.77c-.98.66-2.23 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Sign in with Google</span>
+        </button>
+
+        <div class="login-divider">or</div>
+
+        <div>
+          <button class="guest-btn" onclick="showGuestLogin()">Sign in as Guest (Offline)</button>
+        </div>
+      </div>
+
+      <!-- Guest Login View -->
+      <div id="login-view-guest" class="login-view">
+        <p class="login-desc" style="margin-bottom: 20px;">Enter a profile name to launch a local, offline briefing workspace.</p>
+        <form onsubmit="handleLogin(event)">
+          <div class="input-group">
+            <label class="form-label">Profile Name</label>
+            <input type="text" id="login-username" class="login-input" placeholder="e.g. Director" required autocomplete="off">
+          </div>
+          <button type="submit" class="login-btn-premium">Sign In 🔒</button>
+        </form>
+        
+        <div class="login-footer-text">
+          Want cloud briefing features? <a href="#" class="login-footer-link" onclick="showMainLogin(); return false;">Sign in with Google</a>
+        </div>
+      </div>
+
+      <!-- Google Client ID Setup View -->
+      <div id="login-view-clientid" class="login-view">
+        <p class="login-desc" style="margin-bottom: 16px;">Set up a Google OAuth Client ID to connect this console domain to your Gmail account.</p>
+        
+        <div class="setup-steps">
+          <div class="setup-step">
+            <div class="setup-step-num">1</div>
+            <div class="setup-step-text">Generate OAuth credentials on your Google Cloud Console.</div>
+          </div>
+          <div class="setup-step">
+            <div class="setup-step-num">2</div>
+            <div class="setup-step-text">Add <code id="origin-domain-text">http://localhost:8000</code> to your Authorized JavaScript Origins.</div>
+          </div>
+        </div>
+
+        <div class="input-group" style="margin-top: 16px;">
+          <label class="form-label">Google Client ID</label>
+          <input type="text" id="setup-google-client-id" class="login-input" placeholder="xxxxx.apps.googleusercontent.com" autocomplete="off">
+        </div>
+
+        <div class="client-id-actions" style="margin-top: 24px; display: flex; gap: 10px;">
+          <button type="button" class="login-btn-premium secondary" onclick="showMainLogin()">Cancel</button>
+          <button type="button" class="login-btn-premium" onclick="saveGoogleClientId()">Save & Link 🔗</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<div id="app-container">
+  
+  <!-- ── SIDEBAR ── -->
+  <div id="sidebar">
+    <div id="sidebar-hdr" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 0 4px;">
+      <svg viewBox="0 0 200 100" width="44" height="22" style="overflow: visible;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow-heavy" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="glow-soft" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <!-- Outer glowing wave (cyan) -->
+        <path d="M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80" 
+              fill="none" stroke="#00e5ff" stroke-width="5" stroke-linecap="round" filter="url(#glow-heavy)" opacity="0.85"/>
+        <!-- Middle wave (white) -->
+        <path d="M 15 58 C 15 78, 42 93, 70 87 C 98 81, 108 36, 122 22 C 130 14, 140 30, 150 48 C 160 66, 170 80, 185 80" 
+              fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+        <!-- Underneath lower wave (cyan) -->
+        <path d="M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80" 
+              fill="none" stroke="#00e5ff" stroke-width="4" stroke-linecap="round" filter="url(#glow-heavy)" opacity="0.85"/>
+        <!-- Underneath lower wave (white) -->
+        <path d="M 70 87 C 85 81, 95 50, 122 48 C 145 46, 155 75, 185 80" 
+              fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Glowing Dot at peak -->
+        <circle cx="122" cy="22" r="5" fill="#00e5ff" filter="url(#glow-heavy)"/>
+        <circle cx="122" cy="22" r="2.5" fill="#ffffff"/>
+        <!-- Rays/Sparkle from peak -->
+        <line x1="122" y1="12" x2="122" y2="7" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-soft)"/>
+        <line x1="122" y1="32" x2="122" y2="37" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-soft)"/>
+        <line x1="112" y1="22" x2="107" y2="22" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-soft)"/>
+        <line x1="132" y1="22" x2="137" y2="22" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-soft)"/>
+        <line x1="115" y1="15" x2="111" y2="11" stroke="#00e5ff" stroke-width="1" stroke-linecap="round" filter="url(#glow-soft)"/>
+        <line x1="129" y1="29" x2="133" y2="33" stroke="#00e5ff" stroke-width="1" stroke-linecap="round" filter="url(#glow-soft)"/>
+        <line x1="115" y1="29" x2="111" y2="33" stroke="#00e5ff" stroke-width="1" stroke-linecap="round" filter="url(#glow-soft)"/>
+        <line x1="129" y1="15" x2="133" y2="11" stroke="#00e5ff" stroke-width="1" stroke-linecap="round" filter="url(#glow-soft)"/>
+      </svg>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span class="logo-text" style="font-size: 1.15rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; line-height: 1.1;">ANKUSH</span>
+        <span class="logo-sub" style="font-size: 0.65rem; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; line-height: 1;">Research</span>
+      </div>
+    </div>
+    
+    <button class="new-chat-btn" onclick="startNewConversation()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      New Briefing
+    </button>
+    
+    <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; margin-bottom: 16px;">
+      <div class="section-title">Past Briefings</div>
+      <div id="sidebar-history-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 2px;">
+        <!-- Past chats render here -->
+      </div>
+    </div>
+    
+    <div class="sidebar-section" style="max-height: 200px; display: flex; flex-direction: column; overflow: hidden; border-top: 1px solid var(--border-side); padding-top: 12px; margin-bottom: 8px;">
+      <div class="section-title">Personas / Agents</div>
+      <div id="sidebar-character-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 2px; margin-bottom: 8px;">
+        <!-- Rendered dynamically -->
+      </div>
+      <button class="add-char-btn" onclick="openModal('personas-modal')">+ Add Custom Agent</button>
+    </div>
+    
+    <div id="sidebar-footer">
+      <button class="footer-btn" onclick="openModal('settings-modal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        API Settings
+      </button>
+      <div class="profile-bar">
+        <div class="profile-info">
+          <span class="profile-avatar" id="profile-avatar-char">G</span>
+          <span class="profile-name" id="profile-display-name">Guest</span>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAIN CONTENT ── -->
+  <div id="main-content">
+    
+    <!-- ── HEADER ── -->
+    <div id="hdr">
+      <div id="hdr-left">
+        <button id="sidebar-toggle" onclick="toggleSidebar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <span class="active-persona-name" id="active-persona-name">Ankush</span>
+      </div>
+      <div id="hdr-right">
+        <span class="model-badge" id="model-badge">Llama 3.3</span>
+      </div>
+    </div>
+    
+    <div id="status-bar"></div>
+    
+    <!-- ── MESSAGES FEED ── -->
+    <div id="msgs">
+      <!-- Loaded dynamically -->
+    </div>
+    
+    <!-- ── INPUT CAPSULE PROMPT ── -->
+    <div id="bottom">
+      <div id="prompt-container">
+        <div id="input-wrap">
+          <textarea id="inp" placeholder="Ask anything, research a topic..." rows="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+          
+          <button id="send" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+        
+        <div id="prompt-controls">
+          <button id="deep-search-btn" class="prompt-toggle" onclick="toggleDeepSearch()">
+            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            Deep Search
+          </button>
+          
+          <button id="deep-think-btn" class="prompt-toggle" onclick="toggleDeepThink()">
+            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+              <path d="M12 6v6l4 2"></path>
+            </svg>
+            Deep Think
+          </button>
+          
+          <button id="gmail-btn" class="prompt-toggle" onclick="toggleGmailScan()">
+            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Gmail Scan
+          </button>
+          
+          <button id="incognito-btn" class="prompt-toggle" onclick="toggleIncognito()">
+            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+            Incognito
+          </button>
+        </div>
+      </div>
+      <div id="input-hint">Enter to send &bull; Shift+Enter for new line &bull; Web searching cited at end</div>
+    </div>
+    
+  </div>
+
+  <!-- ── PERSONAS MODAL ── -->
+  <div id="personas-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-hdr">
+        <span>Create Agent Persona</span>
+        <button class="modal-close" onclick="closeModal('personas-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="char-form" onsubmit="createCharacter(event)">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Agent Name</label>
+            <input type="text" id="char-name" placeholder="e.g. SHERLOCK" required autocomplete="off">
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Role / Subtitle</label>
+            <input type="text" id="char-subtitle" placeholder="e.g. Detective Consultant" required autocomplete="off">
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>System instructions / Prompt</label>
+            <textarea id="char-instructions" placeholder="How should this agent behave, think, and format its responses?" rows="5" required></textarea>
+          </div>
+          <button type="submit" class="primary-btn" style="width: 100%;">Create & Activate</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS MODAL ── -->
+  <div id="settings-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-hdr">
+        <span>API Settings</span>
+        <button class="modal-close" onclick="closeModal('settings-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="settings-form" onsubmit="saveSettings(event)">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>API Endpoint Base URL</label>
+            <input type="url" id="settings-api-url" required autocomplete="off">
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Model Identifier</label>
+            <input type="text" id="settings-model" required autocomplete="off">
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label>Google OAuth Client ID</label>
+            <input type="text" id="settings-google-client-id" placeholder="Enter Client ID (optional)" autocomplete="off">
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>API Bearer Key</label>
+            <input type="password" id="settings-api-key" placeholder="Enter API Key (optional)" autocomplete="off">
+          </div>
+          <button type="submit" class="primary-btn" style="width: 100%;">Save Configuration</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── Viewport fix ── */
+function setVH() { document.documentElement.style.setProperty('--vh', window.innerHeight * 0.01 + 'px'); }
+setVH();
+window.addEventListener('resize', setVH);
+window.addEventListener('orientationchange', () => setTimeout(setVH, 300));
+
+/* ── Timestamp ── */
+function now() {
+  return new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}) + ' UTC+' + (-(new Date().getTimezoneOffset()/60));
+}
+
+const inpEl   = document.getElementById('inp');
+const msgsEl  = document.getElementById('msgs');
+const sendBtn = document.getElementById('send');
+const statBar = document.getElementById('status-bar');
+
+inpEl.addEventListener('focus', () => setTimeout(() => { msgsEl.scrollTop = msgsEl.scrollHeight; }, 350));
+
+/* ── Configuration & State management ── */
+const DEFAULT_CHARACTERS = [
+  {
+    id: 'ankush',
+    name: 'ANKUSH',
+    subtitle: 'Advanced Research Intelligence Agent',
+    systemPrompt: `You are Ankush, a highly professional AI researcher. You work FOR the user, addressing them as "Sir" or by deferring to them as your boss/director. You are precise, factual, structured, and always cite sources.
+
+ROLE & BEHAVIOR:
+• You are a dedicated researcher reporting to your boss (the user)
+• Address the user respectfully: "Sir", "Understood, Sir", "As you requested, Sir"
+• Always be factual, neutral, and academically rigorous
+• Structure responses with clear sections when needed
+• Be thorough but concise — deliver intelligence briefing style
+• Acknowledge uncertainty: "Based on available data..." or "This requires verification..."
+• Never fabricate facts; if unsure, say so clearly
+
+WHEN PROVIDED [NEWS_DATA] or [SEARCH_DATA]:
+- Extract the key facts and present them in a clear briefing
+- Reference each piece of information with the source number: [1], [2], etc.
+- Summarize accurately without distorting the source content
+- Present multiple angles if available
+
+WHEN NO LIVE DATA IS AVAILABLE:
+- Use your training knowledge and clearly state: "Based on my training data as of early 2024..."
+- Recommend where the user can verify the information
+- Suggest credible sources: Reuters, BBC, AP News, Wikipedia, academic journals
+
+FORMAT — STRICTLY FOLLOW THIS:
+- Always structure your response in clearly separated sections
+- Use a short 1-2 sentence SUMMARY at the top
+- Then use "• " bullet points for key facts and details (one fact per bullet)
+- Use "KEY POINTS:" as a header before bullet lists
+- Use "CONCLUSION:" for a closing line when relevant
+- Add blank lines between sections for breathing room
+- Number inline references as [1], [2], [3]
+- NEVER write long dense paragraphs — always break into bullets
+- Keep each bullet short: one clear idea, one line
+- Professional intelligence-briefing tone throughout
+
+ACCURACY RULES:
+- Never present speculation as fact
+- Distinguish between confirmed reports and unverified claims
+- If sources conflict, present both sides
+- Always include source citations at end of response in format: SOURCE [N]: <url>`
+  }
+];
+
+const defaultSettings = {
+  apiUrl: 'https://api.llm7.io/v1/chat/completions',
+  model: 'meta-llama/llama-3.3-70b-instruct:free',
+  apiKey: 'unused',
+  googleClientId: ''
+};
+
+let activeProfile = localStorage.getItem('ankush_active_profile') || null;
+
+let settings, characters, activeCharId, activeCharacter, conversations, activeConversationId, activeConversation;
+let deepSearchActive = false;
+let deepThinkActive = false;
+let incognitoActive = false;
+let incognitoConversation = null;
+
+let googleToken = localStorage.getItem('ankush_google_token') || null;
+let googleTokenExpiry = parseInt(localStorage.getItem('ankush_google_token_expiry')) || 0;
+let googleClientId = localStorage.getItem('ankush_google_client_id') || '';
+let gmailScanActive = false;
+let tokenClient = null;
+let tokenResolver = null;
+
+/* ── Google Authentication & Initialization ── */
+function initGoogleAuth() {
+  const clientId = googleClientId || (settings ? settings.googleClientId : '') || '';
+  if (!clientId || typeof google === 'undefined') return;
+  
+  try {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: 'openid email profile https://www.googleapis.com/auth/gmail.readonly',
+      callback: async (response) => {
+        if (response.error) {
+          console.error('GSI authentication error:', response.error);
+          setStatus('Authentication failed. Please verify your client configurations.', true);
+          setTimeout(() => setStatus('', false), 4000);
+          if (tokenResolver) {
+            tokenResolver(false);
+            tokenResolver = null;
+          }
+          return;
+        }
+        if (response.access_token) {
+          googleToken = response.access_token;
+          googleTokenExpiry = Date.now() + (response.expires_in * 1000);
+          localStorage.setItem('ankush_google_token', googleToken);
+          localStorage.setItem('ankush_google_token_expiry', googleTokenExpiry);
+          
+          setStatus('Retrieving profile information...');
+          const profile = await fetchUserProfile();
+          if (profile) {
+            localStorage.setItem('ankush_active_profile', profile.email);
+            activeProfile = profile.email;
+            localStorage.setItem(`ankush_profile_info_${profile.email}`, JSON.stringify(profile));
+            
+            document.getElementById('login-overlay').style.display = 'none';
+            showMainLogin();
+            document.getElementById('setup-google-client-id').value = '';
+            
+            loadProfileData();
+            
+            const badge = document.getElementById('model-badge');
+            if (badge && settings) badge.textContent = settings.model.split('/').pop().slice(0, 20);
+            
+            initToggles();
+            renderCharacterList();
+            renderHistoryList();
+            applyActiveCharacter(activeCharacter);
+            initChat();
+            
+            setStatus('Briefing workspace initialized.', true);
+            setTimeout(() => setStatus('', false), 2500);
+          }
+          
+          if (tokenResolver) {
+            tokenResolver(true);
+            tokenResolver = null;
+          }
+        }
+      },
+    });
+  } catch (err) {
+    console.error('Error initializing token client:', err);
+  }
+}
+
+function requestGoogleToken() {
+  return new Promise((resolve) => {
+    if (googleToken && Date.now() < googleTokenExpiry) {
+      resolve(true);
+      return;
+    }
+    
+    tokenResolver = resolve;
+    if (!tokenClient) {
+      initGoogleAuth();
+    }
+    
+    if (tokenClient) {
+      tokenClient.requestAccessToken({ prompt: 'consent' });
+    } else {
+      showClientIdSetup();
+      resolve(false);
+    }
+  });
+}
+
+async function fetchUserProfile() {
+  if (!googleToken) return null;
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { 'Authorization': `Bearer ${googleToken}` }
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.error('Error fetching userinfo:', err);
+  }
+  return null;
+}
+
+function startGoogleLogin() {
+  if (window.location.protocol === 'file:') {
+    const banner = document.getElementById('file-warning-banner');
+    if (banner) banner.style.display = 'block';
+    return;
+  }
+  
+  if (!googleClientId) {
+    showClientIdSetup();
+    return;
+  }
+  
+  if (!tokenClient) {
+    initGoogleAuth();
+  }
+  
+  if (tokenClient) {
+    tokenClient.requestAccessToken();
+  } else {
+    showClientIdSetup();
+  }
+}
+
+function saveGoogleClientId() {
+  const input = document.getElementById('setup-google-client-id');
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
+  
+  googleClientId = val;
+  localStorage.setItem('ankush_google_client_id', val);
+  
+  if (settings) {
+    settings.googleClientId = val;
+    localStorage.setItem(`ankush_settings_${activeProfile}`, JSON.stringify(settings));
+  }
+  
+  showMainLogin();
+  initGoogleAuth();
+  
+  setTimeout(() => {
+    if (tokenClient) tokenClient.requestAccessToken();
+  }, 300);
+}
+
+function showGuestLogin() {
+  document.querySelectorAll('.login-view').forEach(el => el.classList.remove('active'));
+  document.getElementById('login-view-guest').classList.add('active');
+}
+
+function showMainLogin() {
+  document.querySelectorAll('.login-view').forEach(el => el.classList.remove('active'));
+  document.getElementById('login-view-main').classList.add('active');
+}
+
+function showClientIdSetup() {
+  document.querySelectorAll('.login-view').forEach(el => el.classList.remove('active'));
+  document.getElementById('login-view-clientid').classList.add('active');
+  
+  const setupInput = document.getElementById('setup-google-client-id');
+  if (setupInput) setupInput.value = googleClientId;
+}
+
+function loadProfileData() {
+  if (!activeProfile) return;
+  
+  const avatarChar = document.getElementById('profile-avatar-char');
+  const displayName = document.getElementById('profile-display-name');
+  
+  const profileInfoStr = localStorage.getItem(`ankush_profile_info_${activeProfile}`);
+  if (profileInfoStr) {
+    const profile = JSON.parse(profileInfoStr);
+    if (avatarChar) {
+      if (profile.picture) {
+        avatarChar.innerHTML = `<img src="${profile.picture}" referrerpolicy="no-referrer" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        avatarChar.style.background = 'none';
+      } else {
+        avatarChar.textContent = profile.name.charAt(0).toUpperCase();
+      }
+    }
+    if (displayName) displayName.textContent = profile.name;
+  } else {
+    if (avatarChar) {
+      avatarChar.textContent = activeProfile.charAt(0).toUpperCase();
+      avatarChar.innerHTML = activeProfile.charAt(0).toUpperCase();
+      avatarChar.style.background = '';
+    }
+    if (displayName) displayName.textContent = activeProfile;
+  }
+  
+  settings = JSON.parse(localStorage.getItem(`ankush_settings_${activeProfile}`)) || { ...defaultSettings };
+  characters = JSON.parse(localStorage.getItem(`ankush_characters_${activeProfile}`)) || [ ...DEFAULT_CHARACTERS ];
+  activeCharId = localStorage.getItem(`ankush_active_char_id_${activeProfile}`) || 'ankush';
+  activeCharacter = characters.find(c => c.id === activeCharId) || characters[0];
+  
+  conversations = JSON.parse(localStorage.getItem(`ankush_conversations_${activeProfile}`)) || [];
+  activeConversationId = localStorage.getItem(`ankush_active_conv_id_${activeProfile}`) || null;
+  activeConversation = conversations.find(c => c.id === activeConversationId);
+  
+  if (!activeConversation) {
+    if (conversations.length > 0) {
+      activeConversation = conversations[0];
+      activeConversationId = activeConversation.id;
+    } else {
+      activeConversation = {
+        id: 'chat-' + Date.now(),
+        title: 'New Briefing',
+        characterId: activeCharId,
+        history: []
+      };
+      conversations.push(activeConversation);
+      activeConversationId = activeConversation.id;
+    }
+    localStorage.setItem(`ankush_conversations_${activeProfile}`, JSON.stringify(conversations));
+    localStorage.setItem(`ankush_active_conv_id_${activeProfile}`, activeConversationId);
+  }
+  
+  if (activeConversation && activeConversation.characterId) {
+    activeCharId = activeConversation.characterId;
+    activeCharacter = characters.find(c => c.id === activeCharId) || characters[0];
+  }
+  
+  deepSearchActive = localStorage.getItem(`ankush_deep_search_${activeProfile}`) === 'true';
+  deepThinkActive = localStorage.getItem(`ankush_deep_think_${activeProfile}`) === 'true';
+  gmailScanActive = localStorage.getItem(`ankush_gmail_scan_${activeProfile}`) === 'true';
+  
+  if (settings.googleClientId) {
+    googleClientId = settings.googleClientId;
+    localStorage.setItem('ankush_google_client_id', googleClientId);
+  }
+}
+
+/* ── Login/Logout Handlers ── */
+function handleLogin(e) {
+  e.preventDefault();
+  const usernameInput = document.getElementById('login-username');
+  if (!usernameInput) return;
+  const username = usernameInput.value.trim();
+  if (!username) return;
+  
+  localStorage.setItem('ankush_active_profile', username);
+  activeProfile = username;
+  
+  document.getElementById('login-overlay').style.display = 'none';
+  usernameInput.value = '';
+  
+  loadProfileData();
+  
+  const badge = document.getElementById('model-badge');
+  if (badge && settings) badge.textContent = settings.model.split('/').pop().slice(0, 20);
+  
+  initToggles();
+  renderCharacterList();
+  renderHistoryList();
+  applyActiveCharacter(activeCharacter);
+  initChat();
+}
+
+function handleLogout() {
+  if (incognitoActive) {
+    toggleIncognito();
+  }
+  localStorage.removeItem('ankush_active_profile');
+  activeProfile = null;
+  
+  googleToken = null;
+  googleTokenExpiry = 0;
+  localStorage.removeItem('ankush_google_token');
+  localStorage.removeItem('ankush_google_token_expiry');
+  gmailScanActive = false;
+  
+  document.getElementById('login-overlay').style.display = 'flex';
+  showMainLogin();
+  
+  document.getElementById('sidebar-history-list').innerHTML = '';
+  document.getElementById('sidebar-character-list').innerHTML = '';
+  msgsEl.innerHTML = '';
+  document.getElementById('profile-avatar-char').textContent = 'G';
+  document.getElementById('profile-avatar-char').style.background = '';
+  document.getElementById('profile-display-name').textContent = 'Guest';
+  
+  const gmailBtn = document.getElementById('gmail-btn');
+  if (gmailBtn) gmailBtn.classList.remove('active');
+}
+
+/* ── Modals logic ── */
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.style.display = 'flex';
+    if (id === 'settings-modal' && settings) {
+      document.getElementById('settings-api-url').value = settings.apiUrl;
+      document.getElementById('settings-model').value = settings.model;
+      document.getElementById('settings-google-client-id').value = settings.googleClientId || googleClientId || '';
+      document.getElementById('settings-api-key').value = settings.apiKey === 'unused' ? '' : settings.apiKey;
+    }
+  }
+}
+
+// Global modal closer when clicking overlay
+window.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.style.display = 'none';
+  }
+});
+
+function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) modal.style.display = 'none';
+}
+
+function saveSettings(e) {
+  e.preventDefault();
+  if (!settings) return;
+  settings.apiUrl = document.getElementById('settings-api-url').value.trim();
+  settings.model = document.getElementById('settings-model').value.trim();
+  settings.googleClientId = document.getElementById('settings-google-client-id').value.trim();
+  const key = document.getElementById('settings-api-key').value.trim();
+  settings.apiKey = key || 'unused';
+  
+  googleClientId = settings.googleClientId;
+  localStorage.setItem('ankush_google_client_id', googleClientId);
+  
+  localStorage.setItem(`ankush_settings_${activeProfile}`, JSON.stringify(settings));
+  document.getElementById('model-badge').textContent = settings.model.split('/').pop().slice(0, 20);
+  
+  initGoogleAuth();
+  closeModal('settings-modal');
+}
+
+function renderCharacterList() {
+  const listEl = document.getElementById('sidebar-character-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  
+  characters.forEach(char => {
+    const item = document.createElement('div');
+    item.className = 'char-item' + (char.id === activeCharId ? ' active' : '');
+    
+    const info = document.createElement('div');
+    info.className = 'char-info';
+    
+    const nameLine = document.createElement('div');
+    nameLine.className = 'char-name';
+    nameLine.textContent = char.name;
+    
+    const subtitle = document.createElement('div');
+    subtitle.className = 'char-subtitle';
+    subtitle.textContent = char.subtitle;
+    
+    info.appendChild(nameLine);
+    info.appendChild(subtitle);
+    item.appendChild(info);
+    
+    const actions = document.createElement('div');
+    actions.className = 'char-actions';
+    
+    if (char.id !== 'ankush') {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'char-btn delete';
+      delBtn.innerHTML = '🗑️';
+      delBtn.title = 'Delete Character';
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteCharacter(char.id);
+      };
+      actions.appendChild(delBtn);
+    }
+    
+    item.appendChild(actions);
+    
+    item.onclick = () => {
+      selectCharacter(char.id);
+    };
+    
+    listEl.appendChild(item);
+  });
+}
+
+function selectCharacter(id) {
+  activeCharId = id;
+  activeCharacter = characters.find(c => c.id === id) || characters[0];
+  localStorage.setItem(`ankush_active_char_id_${activeProfile}`, id);
+  
+  if (incognitoActive) {
+    if (incognitoConversation) {
+      incognitoConversation.characterId = id;
+    }
+  } else if (activeConversation) {
+    activeConversation.characterId = id;
+    localStorage.setItem(`ankush_conversations_${activeProfile}`, JSON.stringify(conversations));
+  }
+  
+  applyActiveCharacter(activeCharacter);
+  renderCharacterList();
+  
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.remove('open');
+  
+  const currentHistory = incognitoActive ? (incognitoConversation ? incognitoConversation.history : []) : (activeConversation ? activeConversation.history : []);
+  if (currentHistory.length === 0) {
+    initChat();
+  } else {
+    const systemAlert = document.createElement('div');
+    systemAlert.className = 'chip';
+    systemAlert.textContent = `switched to ${activeCharacter.name}`;
+    msgsEl.appendChild(systemAlert);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+}
+
+function applyActiveCharacter(char) {
+  const tagEl = document.getElementById('active-persona-name');
+  if (tagEl) {
+    tagEl.textContent = char.name;
+  }
+}
+
+function createCharacter(e) {
+  e.preventDefault();
+  const name = document.getElementById('char-name').value.trim();
+  const subtitle = document.getElementById('char-subtitle').value.trim();
+  const instructions = document.getElementById('char-instructions').value.trim();
+  
+  const newChar = {
+    id: 'char-' + Date.now(),
+    name: name.toUpperCase(),
+    subtitle: subtitle,
+    systemPrompt: instructions
+  };
+  
+  characters.push(newChar);
+  localStorage.setItem(`ankush_characters_${activeProfile}`, JSON.stringify(characters));
+  
+  document.getElementById('char-form').reset();
+  closeModal('personas-modal');
+  selectCharacter(newChar.id);
+}
+
+function deleteCharacter(id) {
+  if (confirm('Are you sure you want to delete this character?')) {
+    characters = characters.filter(c => c.id !== id);
+    localStorage.setItem(`ankush_characters_${activeProfile}`, JSON.stringify(characters));
+    if (activeCharId === id) {
+      selectCharacter('ankush');
+    } else {
+      renderCharacterList();
+    }
+  }
+}
+
+/* ── Chat History Logic ── */
+function renderHistoryList() {
+  const listEl = document.getElementById('sidebar-history-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  
+  conversations.forEach(conv => {
+    const item = document.createElement('div');
+    item.className = 'history-item' + (conv.id === activeConversationId ? ' active' : '');
+    
+    const title = document.createElement('div');
+    title.className = 'history-title';
+    title.textContent = conv.title;
+    
+    item.appendChild(title);
+    
+    const actions = document.createElement('div');
+    actions.className = 'history-actions';
+    
+    const delBtn = document.createElement('button');
+    delBtn.className = 'history-btn delete';
+    delBtn.innerHTML = '🗑️';
+    delBtn.title = 'Delete Briefing';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      deleteConversation(conv.id);
+    };
+    actions.appendChild(delBtn);
+    item.appendChild(actions);
+    
+    item.onclick = () => {
+      selectConversation(conv.id);
+    };
+    
+    listEl.appendChild(item);
+  });
+}
+
+function selectConversation(id) {
+  if (incognitoActive) {
+    toggleIncognito();
+  }
+  
+  activeConversationId = id;
+  activeConversation = conversations.find(c => c.id === id) || conversations[0];
+  localStorage.setItem(`ankush_active_conv_id_${activeProfile}`, id);
+  
+  activeCharId = activeConversation.characterId || 'ankush';
+  activeCharacter = characters.find(c => c.id === activeCharId) || characters[0];
+  localStorage.setItem(`ankush_active_char_id_${activeProfile}`, activeCharId);
+  
+  applyActiveCharacter(activeCharacter);
+  renderCharacterList();
+  renderHistoryList();
+  
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.remove('open');
+  
+  initChat();
+}
+
+function startNewConversation() {
+  if (incognitoActive) {
+    toggleIncognito();
+  }
+  
+  const newConv = {
+    id: 'chat-' + Date.now(),
+    title: 'New Briefing',
+    characterId: activeCharId,
+    history: []
+  };
+  conversations.unshift(newConv);
+  activeConversationId = newConv.id;
+  activeConversation = newConv;
+  
+  localStorage.setItem(`ankush_conversations_${activeProfile}`, JSON.stringify(conversations));
+  localStorage.setItem(`ankush_active_conv_id_${activeProfile}`, activeConversationId);
+  
+  selectConversation(newConv.id);
+}
+
+function deleteConversation(id) {
+  if (confirm('Are you sure you want to delete this briefing session?')) {
+    conversations = conversations.filter(c => c.id !== id);
+    localStorage.setItem(`ankush_conversations_${activeProfile}`, JSON.stringify(conversations));
+    
+    if (activeConversationId === id) {
+      if (conversations.length > 0) {
+        selectConversation(conversations[0].id);
+      } else {
+        startNewConversation();
+      }
+    } else {
+      renderHistoryList();
+    }
+  }
+}
+
+/* ── Toggles logic ── */
+function initToggles() {
+  const searchBtn = document.getElementById('deep-search-btn');
+  const thinkBtn = document.getElementById('deep-think-btn');
+  const incognitoBtn = document.getElementById('incognito-btn');
+  const gmailBtn = document.getElementById('gmail-btn');
+  const mainContent = document.getElementById('main-content');
+  
+  if (searchBtn) searchBtn.classList.toggle('active', deepSearchActive);
+  if (thinkBtn) thinkBtn.classList.toggle('active', deepThinkActive);
+  if (incognitoBtn) incognitoBtn.classList.toggle('active', incognitoActive);
+  if (gmailBtn) gmailBtn.classList.toggle('active', gmailScanActive);
+  if (mainContent) mainContent.classList.toggle('incognito', incognitoActive);
+}
+
+function toggleDeepSearch() {
+  deepSearchActive = !deepSearchActive;
+  localStorage.setItem(`ankush_deep_search_${activeProfile}`, deepSearchActive);
+  const btn = document.getElementById('deep-search-btn');
+  if (btn) {
+    btn.classList.toggle('active', deepSearchActive);
+  }
+}
+
+function toggleDeepThink() {
+  deepThinkActive = !deepThinkActive;
+  localStorage.setItem(`ankush_deep_think_${activeProfile}`, deepThinkActive);
+  const btn = document.getElementById('deep-think-btn');
+  if (btn) {
+    btn.classList.toggle('active', deepThinkActive);
+  }
+}
+
+function toggleIncognito() {
+  incognitoActive = !incognitoActive;
+  const btn = document.getElementById('incognito-btn');
+  const mainContent = document.getElementById('main-content');
+  
+  if (btn) btn.classList.toggle('active', incognitoActive);
+  if (mainContent) mainContent.classList.toggle('incognito', incognitoActive);
+  
+  if (incognitoActive) {
+    incognitoConversation = {
+      id: 'incognito-chat',
+      title: 'Incognito Briefing',
+      characterId: activeCharId,
+      history: []
+    };
+  } else {
+    incognitoConversation = null;
+  }
+  initChat();
+}
+
+function toggleGmailScan() {
+  if (incognitoActive) {
+    setStatus('Gmail integration is disabled in Incognito mode.', true);
+    setTimeout(() => setStatus('', false), 3000);
+    return;
+  }
+  if (!googleToken || Date.now() >= googleTokenExpiry) {
+    setStatus('Authorizing Gmail read scopes...');
+    requestGoogleToken().then(success => {
+      if (success) {
+        gmailScanActive = !gmailScanActive;
+        localStorage.setItem(`ankush_gmail_scan_${activeProfile}`, gmailScanActive);
+        updateGmailScanBtnState();
+        setStatus('Gmail link established.', true);
+        setTimeout(() => setStatus('', false), 2000);
+      } else {
+        setStatus('Gmail authorization failed/canceled.', true);
+        setTimeout(() => setStatus('', false), 3000);
+      }
+    });
+    return;
+  }
+  
+  gmailScanActive = !gmailScanActive;
+  localStorage.setItem(`ankush_gmail_scan_${activeProfile}`, gmailScanActive);
+  updateGmailScanBtnState();
+}
+
+function updateGmailScanBtnState() {
+  const btn = document.getElementById('gmail-btn');
+  if (btn) {
+    btn.classList.toggle('active', gmailScanActive);
+  }
+}
+
+/* ── Sidebar Toggler (Mobile) ── */
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('open');
+  }
+}
+
+/* ── Keywords for live fetch ── */
+const NEWS_KW = ['news','latest','today','update','current','happening','world','global',
+  'war','conflict','politics','economy','market','stock','crypto','bitcoin','sport','cricket',
+  'election','government','president','prime minister','india','usa','america','china','russia',
+  'pakistan','uk','europe','africa','middle east','ai','artificial intelligence','tech','technology',
+  'science','health','covid','disease','earthquake','climate','inflation','price','rate',
+  'breaking','ukraine','gaza','israel','iran','north korea','research','study','report'];
+
+function needsLive(txt) {
+  const l = txt.toLowerCase();
+  return NEWS_KW.some(k => l.includes(k));
+}
+
+/* ── DuckDuckGo Instant Answer with Nested Topics ── */
+async function duckSearch(query) {
+  try {
+    const res  = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
+    const data = await res.json();
+    const results = [];
+    if (data.AbstractText && data.AbstractURL) {
+      results.push({ text: data.AbstractText, url: data.AbstractURL, title: data.AbstractSource || 'DuckDuckGo' });
+    }
+    const extractTopics = (topics) => {
+      topics.forEach(t => {
+        if (t.Text && t.FirstURL) {
+          results.push({ text: t.Text, url: t.FirstURL, title: t.Text.slice(0, 50) });
+        } else if (t.Topics) {
+          extractTopics(t.Topics);
+        }
+      });
+    };
+    if (data.RelatedTopics) {
+      extractTopics(data.RelatedTopics);
+    }
+    return results.slice(0, 8);
+  } catch { return []; }
+}
+
+/* ── Upgraded Parallel RSS Search (Google News Index + Top Outlets) ── */
+async function fetchRSS(query) {
+  const FEEDS = [
+    { url: `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`, name: 'Google News Index' },
+    { url: 'https://feeds.bbci.co.uk/news/world/rss.xml',  name: 'BBC News World' },
+    { url: 'https://feeds.bbci.co.uk/news/technology/rss.xml', name: 'BBC Technology' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', name: 'The New York Times' },
+    { url: 'https://www.theguardian.com/world/rss', name: 'The Guardian' },
+    { url: 'https://techcrunch.com/feed/', name: 'TechCrunch' },
+    { url: 'https://www.wired.com/feed/rss', name: 'Wired Magazine' },
+    { url: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml', name: 'Wall Street Journal' },
+    { url: 'https://feeds.npr.org/1001/rss.xml', name: 'NPR News' }
+  ];
+
+  const q = query.toLowerCase().split(' ').filter(w => w.length > 3);
+  
+  // Query all feeds simultaneously (parallel fetching)
+  const fetchPromises = FEEDS.map(async (feed) => {
+    try {
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&count=10`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (!data.items) return [];
+      
+      const matched = [];
+      data.items.forEach(item => {
+        let title = item.title || '';
+        const desc  = (item.description || '').replace(/<[^>]+>/g,'').slice(0,220);
+        const link  = item.link || item.guid || '#';
+        
+        let sourceName = feed.name;
+        if (feed.name === 'Google News Index') {
+          if (item.source) {
+            sourceName = item.source;
+          } else {
+            const parts = title.split(' - ');
+            if (parts.length > 1) {
+              sourceName = parts.pop();
+              title = parts.join(' - ');
+            }
+          }
+        }
+        
+        // Since Google News is already query-specific, load all; for others, check relevance
+        const isGoogleNews = feed.name === 'Google News Index';
+        const isRelevant = isGoogleNews || q.some(w => title.toLowerCase().includes(w) || desc.toLowerCase().includes(w));
+        
+        if (isRelevant) {
+          matched.push({ title, desc, url: link, source: sourceName });
+        }
+      });
+      return matched;
+    } catch {
+      return [];
+    }
+  });
+
+  const resultsArray = await Promise.all(fetchPromises);
+  const items = [];
+  resultsArray.forEach(arr => {
+    items.push(...arr);
+  });
+
+  // Deduplicate items by title
+  const seen = new Set();
+  const deduped = [];
+  for (const item of items) {
+    const cleanTitle = item.title.toLowerCase().trim();
+    if (!seen.has(cleanTitle)) {
+      seen.add(cleanTitle);
+      deduped.push(item);
+    }
+  }
+
+  return deduped.slice(0, 10);
+}
+
+/* ── Wikipedia summary ── */
+async function wikiSearch(query) {
+  try {
+    const cleanQ = encodeURIComponent(query.replace(/\?/g,'').trim());
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${cleanQ}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.extract) return { text: data.extract.slice(0,400), url: data.content_urls?.desktop?.page || 'https://wikipedia.org', title: data.title };
+    return null;
+  } catch { return null; }
+}
+
+/* ── UI Helpers ── */
+function setStatus(msg, show = true) {
+  statBar.textContent = msg;
+  statBar.style.display = show ? 'block' : 'none';
+}
+
+/* ── Gmail API Integration ── */
+async function fetchGmailMessages(query, maxResults = 8) {
+  if (!googleToken || Date.now() >= googleTokenExpiry) {
+    const authorized = await requestGoogleToken();
+    if (!authorized) return [];
+  }
+  
+  try {
+    let url = `https://gmail.googleapis.com/v1/users/me/messages?maxResults=${maxResults}`;
+    const cleanQuery = query ? query.replace(/[^\w\s@]/g, '').trim() : '';
+    if (cleanQuery) {
+      url += `&q=${encodeURIComponent(cleanQuery)}`;
+    }
+    
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${googleToken}` }
+    });
+    
+    if (!res.ok) {
+      if (res.status === 401) {
+        const authorized = await requestGoogleToken();
+        if (authorized) {
+          return fetchGmailMessages(query, maxResults);
+        }
+      }
+      return [];
+    }
+    
+    const data = await res.json();
+    if (!data.messages) return [];
+    
+    const messagePromises = data.messages.map(async (msg) => {
+      try {
+        const detailRes = await fetch(`https://gmail.googleapis.com/v1/users/me/messages/${msg.id}?format=full`, {
+          headers: { 'Authorization': `Bearer ${googleToken}` }
+        });
+        if (!detailRes.ok) return null;
+        const msgData = await detailRes.json();
+        
+        const headers = msgData.payload.headers;
+        const fromHeader = headers.find(h => h.name.toLowerCase() === 'from')?.value || 'Unknown';
+        const subjectHeader = headers.find(h => h.name.toLowerCase() === 'subject')?.value || '(No Subject)';
+        const dateHeader = headers.find(h => h.name.toLowerCase() === 'date')?.value || '';
+        
+        return {
+          id: msg.id,
+          from: fromHeader,
+          subject: subjectHeader,
+          date: dateHeader,
+          snippet: msgData.snippet || ''
+        };
+      } catch (err) {
+        console.error('Error fetching message details:', err);
+        return null;
+      }
+    });
+    
+    const details = await Promise.all(messagePromises);
+    return details.filter(d => d !== null);
+  } catch (err) {
+    console.error('Gmail Scan Error:', err);
+    return [];
+  }
+}
+
+function showResearchCard() {
+  removeResearchCard();
+  const progressDiv = document.createElement('div');
+  progressDiv.id = 'live-research-card';
+  progressDiv.className = 'progress-card';
+  progressDiv.style.margin = '10px auto';
+  
+  let gmailStepHTML = '';
+  if (gmailScanActive) {
+    gmailStepHTML = `
+      <div class="progress-step" id="step-gmail">
+        <span class="step-icon">⬡</span> <span class="step-text">Gmail Inbox scan</span>
+      </div>
+    `;
+  }
+  
+  progressDiv.innerHTML = `
+    <div class="progress-hdr">Scanning Briefing Databases</div>
+    <div class="progress-steps">
+      ${gmailStepHTML}
+      <div class="progress-step" id="step-ddg">
+        <span class="step-icon">⬡</span> <span class="step-text">DuckDuckGo Web Search</span>
+      </div>
+      <div class="progress-step" id="step-rss">
+        <span class="step-icon">⬡</span> <span class="step-text">RSS News Feeds</span>
+      </div>
+      <div class="progress-step" id="step-wiki">
+        <span class="step-icon">⬡</span> <span class="step-text">Wikipedia Encyclopedia</span>
+      </div>
+    </div>
+  `;
+  msgsEl.appendChild(progressDiv);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+function updateResearchStep(stepId, text, status) {
+  const step = document.getElementById('step-' + stepId);
+  if (!step) return;
+  
+  const iconEl = step.querySelector('.step-icon');
+  const textEl = step.querySelector('.step-text');
+  
+  textEl.textContent = text;
+  step.className = 'progress-step ' + status;
+  
+  if (status === 'running') {
+    iconEl.textContent = '⬡';
+  } else if (status === 'done') {
+    iconEl.textContent = '✓';
+  } else {
+    iconEl.textContent = '⬡';
+  }
+}
+
+function removeResearchCard() {
+  document.getElementById('live-research-card')?.remove();
+}
+
+/* ── Gather all intel ── */
+async function gatherIntel(query) {
+  showResearchCard();
+  
+  if (gmailScanActive) {
+    updateResearchStep('gmail', 'Gmail Inbox scan', 'running');
+  }
+  if (deepSearchActive) {
+    updateResearchStep('ddg', 'DuckDuckGo Web Search', 'running');
+    updateResearchStep('rss', 'RSS News Feeds', 'running');
+    updateResearchStep('wiki', 'Wikipedia Encyclopedia', 'running');
+  }
+  
+  const promises = [];
+  
+  let pGmail = Promise.resolve([]);
+  if (gmailScanActive) {
+    pGmail = fetchGmailMessages(query).then(res => {
+      updateResearchStep('gmail', res.length > 0 ? `Gmail Scan: Found ${res.length} matching emails` : 'Gmail Scan: No matching emails found', 'done');
+      return res;
+    });
+    promises.push(pGmail);
+  }
+  
+  let pDdg = Promise.resolve([]);
+  if (deepSearchActive) {
+    pDdg = duckSearch(query).then(res => {
+      updateResearchStep('ddg', res.length > 0 ? `DuckDuckGo: Found ${res.length} references` : 'DuckDuckGo: No indexes found', 'done');
+      return res;
+    });
+    promises.push(pDdg);
+  }
+  
+  let pRss = Promise.resolve([]);
+  if (deepSearchActive) {
+    pRss = fetchRSS(query).then(res => {
+      updateResearchStep('rss', res.length > 0 ? `RSS Feeds: Compiled ${res.length} matches` : 'RSS Feeds: No matches', 'done');
+      return res;
+    });
+    promises.push(pRss);
+  }
+  
+  let pWiki = Promise.resolve([]);
+  if (deepSearchActive) {
+    pWiki = wikiSearch(query).then(res => {
+      updateResearchStep('wiki', res ? `Wikipedia: Loaded article "${res.title}"` : 'Wikipedia: No matching records', 'done');
+      return res;
+    });
+    promises.push(pWiki);
+  }
+  
+  await Promise.all(promises);
+  
+  const gmailItems = await pGmail;
+  const ddgItems = await pDdg;
+  const rssItems = await pRss;
+  const wiki = await pWiki;
+  
+  await new Promise(r => setTimeout(r, 600));
+  removeResearchCard();
+
+  const allSources = [];
+  let contextBlock = '';
+
+  if (gmailScanActive && gmailItems.length) {
+    contextBlock += 'GMAIL INBOX CONTEXT:\n';
+    gmailItems.forEach((msg) => {
+      allSources.push({ title: `Email: ${msg.subject}`, url: `https://mail.google.com/mail/u/0/#inbox/${msg.id}`, source: `Gmail (${msg.from})` });
+      contextBlock += `[${allSources.length}] From: ${msg.from} | Date: ${msg.date} | Subject: ${msg.subject}\nContent Snippet: ${msg.snippet}\n\n`;
+    });
+    contextBlock += '\n';
+  }
+
+  if (deepSearchActive) {
+    if (rssItems.length) {
+      contextBlock += 'LIVE NEWS ARTICLES:\n';
+      rssItems.forEach((item) => {
+        allSources.push({ title: item.title, url: item.url, source: item.source });
+        contextBlock += `[${allSources.length}] ${item.source} — ${item.title}: ${item.desc}\n`;
+      });
+      contextBlock += '\n';
+    }
+
+    if (wiki) {
+      allSources.push({ title: wiki.title, url: wiki.url, source: 'Wikipedia' });
+      contextBlock += `ENCYCLOPEDIA CONTEXT:\n[${allSources.length}] Wikipedia — ${wiki.title}: ${wiki.text}\n\n`;
+    }
+
+    if (ddgItems.length) {
+      contextBlock += 'ADDITIONAL CONTEXT:\n';
+      ddgItems.slice(0,3).forEach(item => {
+        if (item.text && item.url) {
+          allSources.push({ title: item.title, url: item.url, source: 'DuckDuckGo/Web' });
+          contextBlock += `[${allSources.length}] ${item.title}: ${item.text.slice(0,180)}\n`;
+        }
+      });
+    }
+  }
+
+  return { contextBlock: contextBlock.trim(), sources: allSources };
+}
+
+function formatArticleBody(text) {
+  let escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  
+  // Format bold, italic, code
+  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong style="font-weight:600;color:var(--text);">$1</strong>');
+  escaped = escaped.replace(/\*(.+?)\*/g, '<em style="color:var(--text-dim);">$1</em>');
+  escaped = escaped.replace(/`([^`]+)`/g, '<code style="font-family:var(--mono);font-size:.8rem;background:var(--bg-chat);padding:2px 5px;border-radius:3px;color:var(--accent);border:1px solid var(--border);">$1</code>');
+
+  const lines = escaped.split('\n');
+  const formattedLines = lines.map(line => {
+    const trimmed = line.trim();
+    
+    // Headers
+    const headerMatch = trimmed.match(/^(?:<strong[^>]*>)?(KEY POINTS|SUMMARY|CONCLUSION|NOTE|WARNING|ANALYSIS|BRIEFING|OVERVIEW|FINDINGS|RECOMMENDATION):?(?:<\/strong>)?:?\s*(.*)$/i);
+    if (headerMatch) {
+      const label = headerMatch[1].toUpperCase();
+      const rest = headerMatch[2];
+      return `<div class="section-hdr">${label}</div>` + (rest ? `<p>${rest}</p>` : '');
+    }
+
+    // Bullet list items
+    const bulletMatch = trimmed.match(/^[•\-]\s+(.+)$/);
+    if (bulletMatch) {
+      return `<div class="article-bullet"><span class="bullet-marker">&bull;</span><span class="bullet-content">${bulletMatch[1]}</span></div>`;
+    }
+
+    // Numbered list items
+    const numMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+    if (numMatch) {
+      return `<div class="article-num-list"><span class="num-marker">${numMatch[1]}.</span><span class="num-content">${numMatch[2]}</span></div>`;
+    }
+
+    // Inline citations [1]
+    line = line.replace(/\[(\d+)\]/g, '<sup class="citation-sup">[$1]</sup>');
+    return line;
+  });
+
+  let html = '';
+  formattedLines.forEach(line => {
+    if (line.trim() === '') {
+      html += '<div style="height:10px"></div>';
+    } else {
+      if (line.startsWith('<div') || line.startsWith('<p')) {
+        html += line;
+      } else {
+        html += '<p>' + line + '</p>';
+      }
+    }
+  });
+  return html;
+}
+
+function addBubble(side, text, sources, saveToHistory = true) {
+  if (saveToHistory) {
+    if (incognitoActive) {
+      if (incognitoConversation) {
+        incognitoConversation.history.push({ role: side === 'aria' ? 'assistant' : 'user', content: text, sources: sources });
+        if (incognitoConversation.history.length > 20) incognitoConversation.history.splice(0, incognitoConversation.history.length - 20);
+      }
+    } else if (activeConversation) {
+      activeConversation.history.push({ role: side === 'aria' ? 'assistant' : 'user', content: text, sources: sources });
+      if (activeConversation.history.length > 20) activeConversation.history.splice(0, activeConversation.history.length - 20);
+      
+      // Update conversation title on every user query to reflect the searched topic
+      if (side === 'boss') {
+        const cleanText = text.replace(/\[LIVE_DATA\][\s\S]*?\[\/LIVE_DATA\]/, '').trim();
+        activeConversation.title = cleanText.slice(0, 30) + (cleanText.length > 30 ? '…' : '');
+        renderHistoryList();
+      }
+      
+      localStorage.setItem(`ankush_conversations_${activeProfile}`, JSON.stringify(conversations));
+    }
+  }
+
+  const row = document.createElement('div');
+  row.className = 'row ' + side;
+
+  if (side === 'boss') {
+    // User Message
+    row.innerHTML = `
+      <div class="bub-wrap">
+        <div class="sender">Boss</div>
+        <div class="bub boss"></div>
+        <div class="ts">${now()}</div>
+      </div>
+    `;
+    row.querySelector('.bub.boss').textContent = text;
+  } else {
+    // Assistant Message
+    const aiSvg = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2z"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+    `;
+    
+    row.innerHTML = `
+      <div class="mini-av">
+        ${aiSvg}
+      </div>
+      <div class="bub-wrap">
+        <div class="sender">${activeCharacter.name}</div>
+        <div class="bub aria"></div>
+        <div class="ts">${now()}</div>
+      </div>
+    `;
+    row.querySelector('.bub.aria').innerHTML = formatArticleBody(text);
+    
+    if (sources && sources.length > 0) {
+      const footnoteDiv = document.createElement('div');
+      footnoteDiv.className = 'sources';
+      
+      const fTitle = document.createElement('div');
+      fTitle.className = 'sources-label';
+      fTitle.textContent = 'Sources';
+      footnoteDiv.appendChild(fTitle);
+      
+      sources.forEach((s, i) => {
+        const item = document.createElement('div');
+        item.className = 'source-item';
+        
+        const num = document.createElement('span');
+        num.className = 'src-num';
+        num.textContent = `[${i+1}]`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.style.display = 'block';
+        contentDiv.style.lineHeight = '1.4';
+        
+        const link = document.createElement('a');
+        link.className = 'src-link';
+        link.href = s.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        link.textContent = s.title || s.source || s.url;
+        
+        const sTitle = document.createElement('span');
+        sTitle.className = 'src-title';
+        sTitle.style.marginLeft = '8px';
+        sTitle.style.color = 'var(--text-dim)';
+        sTitle.textContent = s.title ? `— ${s.source}` : '';
+        
+        contentDiv.appendChild(link);
+        contentDiv.appendChild(sTitle);
+        item.appendChild(num);
+        item.appendChild(contentDiv);
+        footnoteDiv.appendChild(item);
+      });
+      
+      row.querySelector('.bub-wrap').insertBefore(footnoteDiv, row.querySelector('.ts'));
+    }
+  }
+
+  msgsEl.appendChild(row);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+function showTyping() {
+  killTyping();
+  const typingDiv = document.createElement('div');
+  typingDiv.id = 'typing';
+  typingDiv.className = 'row aria';
+  
+  const aiSvg = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2z"/>
+      <path d="M12 6v6l4 2"/>
+    </svg>
+  `;
+  
+  typingDiv.innerHTML = `
+    <div class="mini-av">
+      ${aiSvg}
+    </div>
+    <div class="bub-wrap">
+      <div class="sender">${activeCharacter.name}</div>
+      <div class="bub aria">
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+  `;
+  msgsEl.appendChild(typingDiv);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+function killTyping() {
+  document.getElementById('typing')?.remove();
+}
+
+/* ── Main send ── */
+async function sendMsg() {
+  const text = inpEl.value.trim();
+  if (!text) return;
+  inpEl.value = ''; inpEl.style.height = 'auto';
+
+  addBubble('boss', text, null, true);
+  sendBtn.disabled = true;
+
+  let contextBlock = null;
+  let sources = [];
+
+  // If Deep Search or Gmail Scan is active, compile search info
+  if (deepSearchActive || gmailScanActive) {
+    const intel = await gatherIntel(text);
+    contextBlock = intel.contextBlock;
+    sources = intel.sources;
+  }
+
+  setStatus('Analyzing and compiling briefing...');
+
+  const userContent = contextBlock
+    ? `[LIVE_DATA]\n${contextBlock}\n[/LIVE_DATA]\n\nQuery: ${text}`
+    : `Query: ${text}`;
+
+  showTyping();
+
+  // System instruction updates based on Deep Think active state
+  let systemInstruction = activeCharacter.systemPrompt;
+  if (deepThinkActive) {
+    systemInstruction += `\n\n[DEEP THINKING MODE ACTIVE]\nYou must think extremely deeply. Before providing your response, perform a comprehensive, step-by-step logical reasoning breakdown of the query. Structure your analysis clearly and examine all relevant facts, counter-arguments, and implications.`;
+  }
+
+  const currentHistory = incognitoActive ? (incognitoConversation ? incognitoConversation.history : []) : (activeConversation ? activeConversation.history : []);
+  const messages = [
+    { role: 'system', content: systemInstruction },
+    ...currentHistory.map(h => {
+      if (h.role === 'user') {
+        return { role: 'user', content: h.content };
+      } else {
+        return { role: 'assistant', content: h.content };
+      }
+    })
+  ];
+  
+  if (messages.length > 0 && messages[messages.length - 1].role === 'user') {
+    messages[messages.length - 1].content = userContent;
+  }
+
+  const apiTemp = deepThinkActive ? 0.7 : 0.35;
+  const apiMaxTokens = deepThinkActive ? 1500 : 600;
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (settings && settings.apiKey !== 'unused' && settings.apiKey.trim() !== '') {
+      headers['Authorization'] = `Bearer ${settings.apiKey}`;
+    } else {
+      headers['Authorization'] = 'Bearer unused';
+    }
+
+    const res = await fetch(settings ? settings.apiUrl : '', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: settings ? settings.model : '',
+        messages,
+        max_tokens: apiMaxTokens,
+        temperature: apiTemp
+      })
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data  = await res.json();
+    let reply   = data?.choices?.[0]?.message?.content?.trim();
+    if (!reply) throw new Error('Empty');
+
+    reply = reply.replace(/^SOURCE\s*\[\d+\].*$/gmi, '').replace(/\n{3,}/g, '\n\n').trim();
+
+    killTyping(); setStatus('', false);
+    addBubble('aria', reply, sources.length > 0 ? sources : null, true);
+
+  } catch (err) {
+    killTyping(); setStatus('', false);
+    console.error(err);
+    addBubble('aria', 'Apologies, Sir. I encountered a connectivity issue while retrieving data. Please check your settings or try again.', null, false);
+  }
+
+  sendBtn.disabled = false;
+}
+
+/* ── Init Chat ── */
+function initChat() {
+  msgsEl.innerHTML = '';
+  
+  if (incognitoActive) {
+    if (!incognitoConversation || incognitoConversation.history.length === 0) {
+      const greeting = `Welcome to Incognito Mode. I am ${activeCharacter.name}, your dedicated research intelligence agent. Conversations in this mode are kept strictly in-memory and are never written to local storage. Your history will be wiped as soon as you toggle Incognito off or refresh the page. What would you like to investigate secretly, Sir?`;
+      
+      const chip = document.createElement('div');
+      chip.className = 'chip'; chip.textContent = 'incognito session initialized';
+      msgsEl.appendChild(chip);
+      
+      addBubble('aria', greeting, null, false);
+    } else {
+      const chip = document.createElement('div');
+      chip.className = 'chip'; chip.textContent = 'restored incognito session';
+      msgsEl.appendChild(chip);
+      
+      incognitoConversation.history.forEach(msg => {
+        if (msg.role === 'user') {
+          let displayContent = msg.content;
+          const match = msg.content.match(/Query: ([\s\S]*)$/);
+          if (match) displayContent = match[1];
+          addBubble('boss', displayContent, null, false);
+        } else {
+          addBubble('aria', msg.content, msg.sources, false);
+        }
+      });
+    }
+  } else {
+    if (!activeConversation || activeConversation.history.length === 0) {
+      const greeting = `Welcome. I am ${activeCharacter.name}, your dedicated research intelligence agent. I can retrieve live global news, conduct in-depth research on any topic, and compile briefing reports citing verified sources. Every briefing I produce includes a bibliography section at the end for your review. What would you like me to investigate today?`;
+      
+      const chip = document.createElement('div');
+      chip.className = 'chip'; chip.textContent = 'journal initialized';
+      msgsEl.appendChild(chip);
+      
+      addBubble('aria', greeting, null, false);
+    } else {
+      const chip = document.createElement('div');
+      chip.className = 'chip'; chip.textContent = 'restored session briefings';
+      msgsEl.appendChild(chip);
+      
+      activeConversation.history.forEach(msg => {
+        if (msg.role === 'user') {
+          let displayContent = msg.content;
+          const match = msg.content.match(/Query: ([\s\S]*)$/);
+          if (match) displayContent = match[1];
+          addBubble('boss', displayContent, null, false);
+        } else {
+          addBubble('aria', msg.content, msg.sources, false);
+        }
+      });
+    }
+  }
+}
+
+/* ── Clear chat ── */
+function clearChat() {
+  if (incognitoActive) {
+    if (incognitoConversation) {
+      incognitoConversation.history = [];
+    }
+  } else if (activeConversation) {
+    activeConversation.history = [];
+    activeConversation.title = 'New Briefing';
+    localStorage.setItem(`ankush_conversations_${activeProfile}`, JSON.stringify(conversations));
+    renderHistoryList();
+  }
+  initChat();
+}
+
+/* ── Initialization ── */
+if (window.location.protocol === 'file:') {
+  const banner = document.getElementById('file-warning-banner');
+  if (banner) banner.style.display = 'block';
+}
+
+if (activeProfile) {
+  document.getElementById('login-overlay').style.display = 'none';
+  loadProfileData();
+  const badge = document.getElementById('model-badge');
+  if (badge && settings) badge.textContent = settings.model.split('/').pop().slice(0, 20);
+  initToggles();
+  renderCharacterList();
+  renderHistoryList();
+  applyActiveCharacter(activeCharacter);
+  initChat();
+  initGoogleAuth();
+} else {
+  document.getElementById('login-overlay').style.display = 'flex';
+  initGoogleAuth();
+}
+
+
+/* ── Events ── */
+sendBtn.addEventListener('click', sendMsg);
+inpEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+inpEl.addEventListener('input', () => {
+  inpEl.style.height = 'auto';
+  inpEl.style.height = Math.min(inpEl.scrollHeight, 120) + 'px';
+});
+</script>
+</body>
+</html>
